@@ -1,0 +1,48 @@
+# Repository .gitignore tuned for PowerShell modules, Pester, and GitHub
+# See docs/repo_contract.md for rules
+
+# OS / editor folders and files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test and coverage artifacts
+TestResults/
+*.coverage
+coverage.*
+
+# Package artifacts and archives
+*.zip
+*.nupkg
+
+# Exported build artifacts (ignore exports/ but not examples/)
+exports/
+!/examples/
+
+# PowerShell history and session files
+/.pshistory
+
+# Logs and user-specific files
+*.log
+*.user
+*.suo
+
+# Ensure docs and examples are NOT ignored
+!/docs/
+!/docs/**
+!/docs/schemas/**
+!/docs/compliance/**
+!/examples/**
+
+# Explicitly do NOT ignore source files
+!*.psd1
+!*.psm1
+!*.ps1
+# Directories
+.archive/
+.clinerules/
+.gemini
+
+# Files
+.git*
