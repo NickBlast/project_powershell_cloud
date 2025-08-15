@@ -1,0 +1,50 @@
+{
+  "project_name": "project_powershell_cloud",
+  "model": "gemini-2.5-pro",
+  "mode": "implementation+research",
+  "allow_write": true,
+  "include_globs": [
+    "**/*.md",
+    "scripts/**/*.ps1",
+    "modules/**/*.psm1",
+    "docs/**/*.md",
+    "docs/schemas/**/*.json",
+    "docs/compliance/**/*.csv",
+    "tests/**/*.ps1",
+    "examples/**/*"
+  ],
+  "exclude_globs": [
+    ".git/**/*",
+    ".github/**/*",
+    "**/secrets/**/*",
+    "**/*.zip",
+    "**/*.nupkg"
+  ],
+  "commands": {
+    "prereqs": "pwsh -NoProfile -File scripts/ensure-prereqs.ps1",
+    "lint": "pwsh -NoProfile -Command \"Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning\"",
+    "test": "pwsh -NoProfile -Command \"Invoke-Pester -CI\""
+  },
+  "policies": {
+    "directories_style": "lower_case_with_underscores",
+    "powershell_name_style": "Verb-Noun (underscores allowed in Noun)",
+    "schema_required": true,
+    "enforce_dual_exports": true,
+    "block_external_runtimes": ["python", "node", "dotnet"]
+  },
+  "pull_request_template": {
+    "title_format": "<type>: <area> — <summary>",
+    "body_sections": [
+      "Problem",
+      "Solution",
+      "Acceptance Criteria",
+      "Evidence (lint/test output)",
+      "Schema impact & version",
+      "Risk/rollback"
+    ]
+  },
+  "safety": {
+    "redact_in_logs": true,
+    "deny_secrets_on_disk": true
+  }
+}
