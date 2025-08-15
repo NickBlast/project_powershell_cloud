@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "entra_role_assignments",
+  "version": "1.0.0",
+  "type": "object",
+  "description": "Role membership assignments for directory roles (constructed by script).",
+  "primaryKey": ["RoleId","MemberId"],
+  "properties": {
+    "RoleId": { "type": "string" },
+    "RoleDisplayName": { "type": "string" },
+    "MemberId": { "type": "string" },
+    "MemberType": { "type": "string" },
+    "MemberDisplayName": { "type": ["string", "null"] },
+    "MemberPrincipalName": { "type": ["string", "null"] }
+  },
+  "required": [ "RoleId", "MemberId", "MemberType" ]
+}

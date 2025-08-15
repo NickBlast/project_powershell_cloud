@@ -1,0 +1,8 @@
+[
+    {
+        "tenant_id": "00000000-0000-0000-0000-000000000000",
+        "cloud": "AzureCloud",
+        "label": "default_tenant",
+        "preferred_auth": "DeviceCode"
+    }
+]

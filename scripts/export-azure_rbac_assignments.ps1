@@ -1,4 +1,4 @@
-[<#
+<#
 .SYNOPSIS
     Exports all Azure RBAC role assignments across all scopes.
 .DESCRIPTION
