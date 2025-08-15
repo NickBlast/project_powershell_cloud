@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "azure_rbac_definitions",
+  "version": "1.0.0",
+  "type": "object",
+  "description": "Role definition records returned by Get-AzRoleDefinition; complex properties are serialized as JSON strings in CSV exports.",
+  "primaryKey": ["Id"],
+  "properties": {
+    "Id": { "type": "string" },
+    "Name": { "type": "string" },
+    "RoleName": { "type": ["string", "null"] },
+    "Description": { "type": ["string", "null"] },
+    "IsCustom": { "type": ["boolean", "null"] },
+    "AssignableScopes": { "type": ["string", "null"], "description": "Serialized JSON array when exported to CSV" },
+    "Permissions": { "type": ["string", "null"], "description": "Serialized JSON when exported to CSV" }
+  },
+  "required": [ "Id", "Name" ]
+}
