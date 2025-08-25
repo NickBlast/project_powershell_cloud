@@ -1,4 +1,4 @@
-[<#
+<#
 .SYNOPSIS
     Exports Azure scope information: Management Groups, Subscriptions, and Resource Groups.
 .DESCRIPTION
@@ -17,7 +17,7 @@
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
-    [string]$OutputPath = (Join-Path $PSScriptRoot '..' 'exports')
+    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'exports')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -57,7 +57,6 @@ foreach ($mg in $mgs) {
 Write-Verbose "Enumerating Subscriptions..."
 $subs = Get-AzSubscription
 foreach ($sub in $subs) {
-    $mgDetails = ($mgs | Where-Object { $_.Id -eq $sub.ManagementGroupId } | Select-Object -First 1)
     $allScopes.Add([pscustomobject]@{
         Type = 'Subscription'
         Id = $sub.Id

@@ -8,9 +8,10 @@
     The directory path where the export files will be saved. Defaults to './exports'.
 .EXAMPLE
     PS> ./scripts/export-entra_role_assignments.ps1 -OutputPath .\my-entra-data
-[.EXAMPLE
+
+.EXAMPLE
     PS> ./scripts/export-entra_role_assignments.ps1 -OutputPath .\my-entra-data -Verbose
-    
+
 .EXAMPLE
     PS> ./scripts/export-entra_role_assignments.ps1 -WhatIf
 .NOTES
@@ -19,7 +20,7 @@
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
-    [string]$OutputPath = (Join-Path $PSScriptRoot '..' 'exports')
+    [string]$OutputPath = (Join-Path -Path $PSScriptRoot -ChildPath "..\exports")
 )
 
 $ErrorActionPreference = 'Stop'

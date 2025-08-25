@@ -20,7 +20,7 @@
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
-    [string]$OutputPath = (Join-Path $PSScriptRoot '..' 'exports')
+    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'exports')
 )
 
 $ErrorActionPreference = 'Stop'

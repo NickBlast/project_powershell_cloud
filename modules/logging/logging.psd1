@@ -11,8 +11,8 @@
     RequiredModules = @()
     FunctionsToExport = @(
         'New-LogContext',
-        'Set-LogRedactionPatterns',
-        'Write-Log',
+        'Set-LogRedactionPattern',
+        'Write-StructuredLog',
         'Get-CorrelationId',
         'Invoke-WithRetry'
     )

@@ -1,0 +1,49 @@
+# Example MCP Client Configuration (proposal)
+
+# Register read-only servers for safe repo navigation and reference fetching.
+servers:
+  - id: fs-ro
+    type: filesystem
+    enabled: true
+    mode: read
+    roots:
+      - ${WORKSPACE_DIR}
+    log: true
+
+  - id: git-ro
+    type: git
+    enabled: true
+    mode: read
+    log: true
+
+  - id: fetch-ro
+    type: fetch
+    enabled: true
+    allowlist:
+      - https://learn.microsoft.com/**
+      - https://github.com/PowerShell/platyPS/**
+      - https://learn.microsoft.com/powershell/**
+      - https://learn.microsoft.com/powershell/azure/**
+      - https://learn.microsoft.com/powershell/microsoftgraph/**
+    log: true
+
+# Optional, disabled-by-default PowerShell execution server for analyzer only.
+  - id: pwsh-analyzer
+    type: shell
+    enabled: false  # Enable ad hoc for Wave 3 only
+    command: pwsh
+    workingDir: ${WORKSPACE_DIR}
+    allowlist:
+      - Invoke-ScriptAnalyzer -Path . -Recurse*
+      - Get-Verb*
+    denylist:
+      - Remove-Item*
+      - Set-Content*
+      - New-Item*  # disallow writes by default
+    log: true
+
+# Notes
+# - Start with all execution disabled; enable `pwsh-analyzer` only to run PSScriptAnalyzer in Wave 3.
+# - Keep allowlists tight and audited; extend them only with explicit justification.
+# - All tool calls should be logged.
+

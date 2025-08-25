@@ -21,7 +21,7 @@ $script:CorrelationId = [guid]::NewGuid().ToString()
 
 #region Private Helper Functions
 
-function Redact-String {
+function Protect-String {
     param(
         [string]$InputString
     )
@@ -49,10 +49,13 @@ function Redact-String {
     An optional identifier for the dataset being processed.
 .EXAMPLE
     PS> $context = New-LogContext -TenantId 'tenant-abc-123' -DataSet 'Azure.RBAC'
-    PS> Write-Log -Level Info -Message "Starting export..." -Context $context
+    PS> Write-StructuredLog -Level Info -Message "Starting export..." -Context $context
+.NOTES
+    The correlation_id is a unique GUID generated for each new context.
 #>
 function New-LogContext {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([hashtable])]
     param(
         [string]$TenantId,
         [string]$DataSet
@@ -65,7 +68,11 @@ function New-LogContext {
     if ($TenantId) { $context['tenant_id'] = $TenantId }
     if ($DataSet) { $context['dataset'] = $DataSet }
 
-    return $context
+    if ($PSCmdlet.ShouldProcess('LogContext','Create')) {
+        return $context
+    } else {
+        return $context
+    }
 }
 
 <#
@@ -73,7 +80,7 @@ function New-LogContext {
     Sets custom regex patterns for redacting sensitive information from logs.
 .DESCRIPTION
     Overwrites the default redaction patterns with a new set of regex patterns.
-    These patterns are used by Write-Log to mask secrets, PII, or other sensitive data.
+    These patterns are used by Write-StructuredLog to mask secrets, PII, or other sensitive data.
 .PARAMETER Patterns
     An array of strings, where each string is a regular expression pattern to be redacted.
 .EXAMPLE
@@ -81,16 +88,22 @@ function New-LogContext {
         'user/d+',
         'api-key-[a-zA-Z0-9]+'
     )
-    PS> Set-LogRedactionPatterns -Patterns $myPatterns
+    PS> Set-LogRedactionPattern -Patterns $myPatterns
+.OUTPUTS
+    None
+.NOTES
+    This function overwrites any existing patterns. Use with caution.
 #>
-function Set-LogRedactionPatterns {
-    [CmdletBinding()]
+function Set-LogRedactionPattern {
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [string[]]$Patterns
     )
 
-    $script:RedactionPatterns = $Patterns
-    Write-Verbose "Log redaction patterns have been updated."
+    if ($PSCmdlet.ShouldProcess('LogRedactionPatterns','Update')) {
+        $script:RedactionPatterns = $Patterns
+        Write-Verbose "Log redaction patterns have been updated."
+    }
 }
 
 <#
@@ -101,6 +114,10 @@ function Set-LogRedactionPatterns {
     This provides a consistent ID for an entire script execution or session.
 .EXAMPLE
     PS> $sessionId = Get-CorrelationId
+.OUTPUTS
+    [string]
+.NOTES
+    The correlation ID is generated once when the module is first imported.
 #>
 function Get-CorrelationId {
     [CmdletBinding()]
@@ -127,11 +144,15 @@ function Get-CorrelationId {
 .PARAMETER ToFile
     The absolute path to a log file. The message will be appended to this file.
 .EXAMPLE
-    PS> Write-Log -Level Info -Message "User logged in" -Context (New-LogContext)
+    PS> Write-StructuredLog -Level Info -Message "User logged in" -Context (New-LogContext)
 .EXAMPLE
-    PS> Write-Log -Level Error -Message "Failed to connect" -ToFile C:\logs\app.log -ToJson
+    PS> Write-StructuredLog -Level Error -Message "Failed to connect" -ToFile C:\logs\app.log -ToJson
+.OUTPUTS
+    None
+.NOTES
+    This is the primary logging function for the repository. It provides structured, redacted logging.
 #>
-function Write-Log {
+function Write-StructuredLog {
     [CmdletBinding()]
     param(
         [ValidateSet('Info', 'Warn', 'Error', 'Verbose', 'Debug')]
@@ -143,7 +164,7 @@ function Write-Log {
     )
 
     $timestamp = [datetime]::UtcNow.ToString("o")
-    $redactedMessage = Redact-String -InputString $Message
+    $redactedMessage = Protect-String -InputString $Message
 
     $logEntry = @{
         timestamp = $timestamp
@@ -158,17 +179,10 @@ function Write-Log {
     # Console Output
     if ($ToJson) {
         $outputString = $logEntry | ConvertTo-Json -Compress -Depth 5
-        Write-Host $outputString
+        Write-Information $outputString
     } else {
-        $colorMap = @{
-            Info = 'Green'
-            Warn = 'Yellow'
-            Error = 'Red'
-            Verbose = 'Cyan'
-            Debug = 'Gray'
-        }
         $outputString = "$timestamp [$Level] $redactedMessage"
-        Write-Host $outputString -ForegroundColor $colorMap[$Level]
+        Write-Information $outputString
     }
 
     # File Output
@@ -213,7 +227,10 @@ function Write-Log {
         return $user
     }
     PS> Invoke-WithRetry -ScriptBlock $sb -MaxRetries 3 -InitialDelaySeconds 2
-#>
+.OUTPUTS
+    [object]
+.NOTES
+    This function returns the output of the scriptblock if it succeeds. It re-throws the last exception upon failure.
 function Invoke-WithRetry {
     [CmdletBinding()]
     param(
@@ -236,17 +253,17 @@ function Invoke-WithRetry {
         }
         catch {
             $errorMessage = "Attempt $attempt failed. Error: $($_.Exception.Message)"
-            Write-Log -Level Warn -Message $errorMessage -Context @{ correlation_id = (Get-CorrelationId) }
+            Write-StructuredLog -Level Warn -Message $errorMessage -Context @{ correlation_id = (Get-CorrelationId) }
 
             if ($attempt -ge $MaxRetries) {
-                Write-Log -Level Error -Message "Max retries reached. Operation failed." -Context @{ correlation_id = (Get-CorrelationId) }
+                Write-StructuredLog -Level Error -Message "Max retries reached. Operation failed." -Context @{ correlation_id = (Get-CorrelationId) }
                 throw # Re-throw the last exception
             }
 
             $jitter = ($delay * $JitterFactor) * ((Get-Random -Minimum -1.0 -Maximum 1.0))
             $sleepSeconds = [math]::Max(1, $delay + $jitter)
 
-            Write-Log -Level Info -Message "Waiting for $($sleepSeconds.ToString('F2')) seconds before next attempt." -Context @{ correlation_id = (Get-CorrelationId) }
+            Write-StructuredLog -Level Info -Message "Waiting for $($sleepSeconds.ToString('F2')) seconds before next attempt." -Context @{ correlation_id = (Get-CorrelationId) }
             Start-Sleep -Seconds $sleepSeconds
 
             $delay = $delay * $BackoffFactor
@@ -260,8 +277,8 @@ function Invoke-WithRetry {
 
 Export-ModuleMember -Function @(
     'New-LogContext',
-    'Set-LogRedactionPatterns',
-    'Write-Log',
+    'Set-LogRedactionPattern',
+    'Write-StructuredLog',
     'Get-CorrelationId',
     'Invoke-WithRetry'
 )

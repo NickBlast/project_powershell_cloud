@@ -30,6 +30,17 @@ The initial MVP focuses on Azure, with AWS exports supported where noted. See th
     pwsh -NoProfile -File scripts/export-aws_scopes.ps1 -Verbose
     ```
 
+## Required Modules
+
+Installed via `scripts/ensure-prereqs.ps1` (CurrentUser scope; minimum versions pinned):
+
+- Az.Accounts, Az.Resources
+- Microsoft.Graph (SDK)
+- Microsoft.PowerShell.SecretManagement
+- PSScriptAnalyzer, Pester
+- ImportExcel (optional for XLSX)
+- PSResourceGet (module lifecycle), PowerShellGet (bootstrap)
+
 ## Where outputs go
 
 Exports are written to the repository `outputs/` directory by default (or the location printed by the export script).
@@ -57,7 +68,7 @@ Schema and headers are expected to live under `docs/schemas/` and CI validates s
 
 ## Links and governance
 
-- Repo contract (authoritative): `docs/repo_contract.md`
+- Repo contract (authoritative): `docs/repo_design/repo_contract.md`
 - Contribution guidelines: `CONTRIBUTING.md`
 
 ## License and changelog

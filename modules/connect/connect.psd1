@@ -14,7 +14,7 @@
         'Select-Tenant',
         'Connect-GraphContext',
         'Connect-AzureContext',
-        'Get-ActiveContexts'
+        'Get-ActiveContext'
     )
     CmdletsToExport = @()
     VariablesToExport = @()

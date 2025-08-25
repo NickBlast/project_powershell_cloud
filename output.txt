@@ -1,0 +1,63 @@
+
+RuleName                            Severity     ScriptName Line  Message
+--------                            --------     ---------- ----  -------
+PSAvoidTrailingWhitespace           Information  Export.psm 229   Line has trailing whitespace
+                                                 1
+PSUseDeclaredVarsMoreThanAssignment Warning      Export.psm 93    The variable 'expectedType' is assigned but never used.
+s                                                1
+PSUseBOMForUnicodeEncodedFile       Warning      ensure-pre       Missing BOM encoding for non-ASCII encoded file
+                                                 reqs.ps1         'ensure-prereqs.ps1'
+PSUseDeclaredVarsMoreThanAssignment Warning      ensure-pre 46    The variable 'requiredPSEdition' is assigned but never used.
+s                                                reqs.ps1
+PSAvoidTrailingWhitespace           Information  export-azu 5     Line has trailing whitespace
+                                                 re_rbac_as
+                                                 signments.
+                                                 ps1
+PSAvoidUsingPositionalParameters    Information  export-azu 20    Cmdlet 'Join-Path' has positional parameter. Please use
+                                                 re_rbac_as       named parameters instead of positional parameters when
+                                                 signments.       calling a command.
+                                                 ps1
+PSAvoidUsingPositionalParameters    Information  export-azu 13    Cmdlet 'Join-Path' has positional parameter. Please use
+                                                 re_rbac_de       named parameters instead of positional parameters when
+                                                 finitions.       calling a command.
+                                                 ps1
+MissingTypename                     ParseError   export-azu 1     Missing type name after '['.
+                                                 re_scopes.
+                                                 ps1
+UnexpectedAttribute                 ParseError   export-azu 18    Unexpected attribute 'CmdletBinding'.
+                                                 re_scopes.
+                                                 ps1
+UnexpectedToken                     ParseError   export-azu 19    Unexpected token 'param' in expression or statement.
+                                                 re_scopes.
+                                                 ps1
+PSAvoidUsingPositionalParameters    Information  export-azu 20    Cmdlet 'Join-Path' has positional parameter. Please use
+                                                 re_scopes.       named parameters instead of positional parameters when
+                                                 ps1              calling a command.
+PSUseDeclaredVarsMoreThanAssignment Warning      export-azu 60    The variable 'mgDetails' is assigned but never used.
+s                                                re_scopes.
+                                                 ps1
+PSAvoidUsingPositionalParameters    Information  export-ent 16    Cmdlet 'Join-Path' has positional parameter. Please use
+                                                 ra_apps_se       named parameters instead of positional parameters when
+                                                 rvice_prin       calling a command.
+                                                 cipals.ps1
+PSAvoidUsingPositionalParameters    Information  export-ent 13    Cmdlet 'Join-Path' has positional parameter. Please use
+                                                 ra_directo       named parameters instead of positional parameters when
+                                                 ry_roles.p       calling a command.
+                                                 s1
+PSAvoidUsingPositionalParameters    Information  export-ent 14    Cmdlet 'Join-Path' has positional parameter. Please use
+                                                 ra_groups_       named parameters instead of positional parameters when
+                                                 cloud_only       calling a command.
+                                                 .ps1
+PSAvoidUsingPositionalParameters    Information  export-ent 23    Cmdlet 'Join-Path' has positional parameter. Please use
+                                                 ra_group_m       named parameters instead of positional parameters when
+                                                 emberships       calling a command.
+                                                 .ps1
+PSAvoidUsingPositionalParameters    Information  export-ent 22    Cmdlet 'Join-Path' has positional parameter. Please use
+                                                 ra_role_as       named parameters instead of positional parameters when
+                                                 signments.       calling a command.
+                                                 ps1
+PSAvoidTrailingWhitespace           Information  export-ent 13    Line has trailing whitespace
+                                                 ra_role_as
+                                                 signments.
+                                                 ps1
+

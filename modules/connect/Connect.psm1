@@ -19,9 +19,13 @@
 #>
 function Get-TenantCatalog {
     [CmdletBinding()]
+    [OutputType([object[]])]
     param()
 
-    $configPath = Join-Path $PSScriptRoot '..' '..' '.config' 'tenants.json'
+    $configDir = Join-Path -Path $PSScriptRoot -ChildPath '..'
+    $configDir = Join-Path -Path $configDir -ChildPath '..'
+    $configDir = Join-Path -Path $configDir -ChildPath '.config'
+    $configPath = Join-Path -Path $configDir -ChildPath 'tenants.json'
     $configPath = Resolve-Path -Path $configPath -ErrorAction SilentlyContinue
 
     if (-not (Test-Path -Path $configPath)) {
@@ -53,6 +57,8 @@ function Get-TenantCatalog {
 .EXAMPLE
     PS> # Selects the default tenant if only one exists
     PS> $tenant = Select-Tenant
+.OUTPUTS
+    [psobject]
 .NOTES
     This helper is a thin selector and will throw if the catalog is missing or ambiguous. Use Get-TenantCatalog
     to inspect the available entries.
@@ -111,6 +117,8 @@ function Select-Tenant {
     PS> Connect-GraphContext -TenantId $tenant.tenant_id -AuthMode DeviceCode
 .EXAMPLE
     PS> Connect-GraphContext -TenantId $tenant.tenant_id -AuthMode ServicePrincipal -ClientId $appId -VaultName 'MyVault' -SecretName 'GraphSecret'
+.OUTPUTS
+    None
 .NOTES
     This function will call Connect-MgGraph. For ServicePrincipal auth, secrets are retrieved via SecretManagement;
     ensure your vault and permissions are configured. The function does not persist secrets to disk.
@@ -174,6 +182,8 @@ function Connect-GraphContext {
     The name of the secret in the vault.
 .EXAMPLE
     PS> Connect-AzureContext -TenantId $tenant.tenant_id -AuthMode DeviceCode
+.OUTPUTS
+    None
 .NOTES
     For ServicePrincipal authentication the function will retrieve secrets using SecretManagement and create
     a PSCredential; ensure the vault returns a SecureString secret.
@@ -216,11 +226,13 @@ function Connect-AzureContext {
     Provides a sanitized, non-secret object describing the active tenants, accounts, and scopes
     for both Az and MgGraph connections. Useful for diagnostics.
 .EXAMPLE
-    PS> Get-ActiveContexts | Format-List
+    PS> Get-ActiveContext | Format-List
+.OUTPUTS
+    [pscustomobject]
 .NOTES
     This function returns lightweight, non-secret summaries suitable for logging or diagnostics.
 #>
-function Get-ActiveContexts {
+function Get-ActiveContext {
     [CmdletBinding()]
     param()
 
@@ -256,7 +268,7 @@ Export-ModuleMember -Function @(
     'Select-Tenant',
     'Connect-GraphContext',
     'Connect-AzureContext',
-    'Get-ActiveContexts'
+    'Get-ActiveContext'
 )
 
 #endregion
