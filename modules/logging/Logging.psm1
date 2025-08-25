@@ -69,10 +69,10 @@ function New-LogContext {
     if ($DataSet) { $context['dataset'] = $DataSet }
 
     if ($PSCmdlet.ShouldProcess('LogContext','Create')) {
-        return $context
-    } else {
-        return $context
+        # Creation acknowledged by ShouldProcess; nothing special to do.
     }
+
+    return $context
 }
 
 <#
@@ -179,10 +179,10 @@ function Write-StructuredLog {
     # Console Output
     if ($ToJson) {
         $outputString = $logEntry | ConvertTo-Json -Compress -Depth 5
-        Write-Information $outputString
+        Write-Host $outputString
     } else {
         $outputString = "$timestamp [$Level] $redactedMessage"
-        Write-Information $outputString
+        Write-Host $outputString
     }
 
     # File Output
@@ -231,6 +231,7 @@ function Write-StructuredLog {
     [object]
 .NOTES
     This function returns the output of the scriptblock if it succeeds. It re-throws the last exception upon failure.
+#>
 function Invoke-WithRetry {
     [CmdletBinding()]
     param(

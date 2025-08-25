@@ -68,7 +68,7 @@ function Write-OutputVerbose {
         [string]$Message
     )
     if (-not $Quiet) {
-        Write-Information $Message
+        Write-Host $Message
     }
     Write-Verbose $Message
 }
