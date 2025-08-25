@@ -7,6 +7,11 @@
 .DS_Store
 Thumbs.db
 
+# Ai Agent Files
+.clinerules
+.gemini
+AGENTS.md
+
 # Test and coverage artifacts
 TestResults/
 *.coverage
@@ -39,10 +44,6 @@ exports/
 !*.psd1
 !*.psm1
 !*.ps1
-# Directories
-.archive/
-.clinerules/
-.gemini
 
 # Files
 .git*
