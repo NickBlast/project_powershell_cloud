@@ -2,7 +2,7 @@
 .SYNOPSIS
     Exports all Azure RBAC role assignments across all scopes.
 .DESCRIPTION
-    This script connects to Azure and retrieves a list of all role assignments. 
+    This script connects to Azure and retrieves a list of all role assignments.
     This can be a long-running operation on large tenants.
 .PARAMETER OutputPath
     The directory path where the export files will be saved. Defaults to './exports'.
@@ -17,7 +17,7 @@
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
-    [string]$OutputPath = (Join-Path $PSScriptRoot '..' 'exports')
+    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'exports')
 )
 
 $ErrorActionPreference = 'Stop'

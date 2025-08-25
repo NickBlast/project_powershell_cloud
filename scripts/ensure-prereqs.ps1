@@ -43,7 +43,6 @@ param(
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
 
-$requiredPSEdition = 'Core'
 $requiredPSVersion = '7.4.0'
 
 # Define required modules with minimum versions
@@ -69,7 +68,7 @@ function Write-OutputVerbose {
         [string]$Message
     )
     if (-not $Quiet) {
-        Write-Host $Message
+        Write-Information $Message
     }
     Write-Verbose $Message
 }
@@ -84,7 +83,7 @@ if ($PSVersionTable.PSVersion -lt [Version]$requiredPSVersion) {
     Write-Error "PowerShell version $($PSVersionTable.PSVersion) is not supported. Please upgrade to version $requiredPSVersion or higher."
     exit 1
 }
-Write-OutputVerbose "✔️ PowerShell version check passed."
+Write-OutputVerbose "[OK] PowerShell version check passed."
 #endregion
 
 #region 2. PSResourceGet Check
@@ -95,11 +94,11 @@ try {
         Write-OutputVerbose "PSResourceGet not found. Attempting to install from PSGallery..."
         if ($PSCmdlet.ShouldProcess('PSResourceGet', 'Install Module')) {
             Install-Module -Name PSResourceGet -Repository PSGallery -Force -Scope CurrentUser
-            Write-OutputVerbose "✔️ PSResourceGet installed successfully."
+            Write-OutputVerbose "[OK] PSResourceGet installed successfully."
         }
     }
     else {
-        Write-OutputVerbose "✔️ PSResourceGet is available."
+        Write-OutputVerbose "[OK] PSResourceGet is available."
     }
 }
 catch {
@@ -135,7 +134,7 @@ foreach ($moduleName in $requiredModules.Keys) {
             }
             Install-PSResource @installParams
             $newVersion = (Get-Module -Name $moduleName -ListAvailable).Version
-            Write-OutputVerbose "  ✔️ Successfully installed $moduleName version $newVersion."
+            Write-OutputVerbose "  [OK] Successfully installed $moduleName version $newVersion."
         }
         catch {
             Write-Error "Failed to install module '$moduleName'. Error: $_"
@@ -158,9 +157,9 @@ if ($modulePaths[0] -ne $currentUserPath) {
     Write-Verbose "CurrentUser module path is not prioritized. Adjusting..."
     $newPath = ($currentUserPath, ($modulePaths | Where-Object { $_ -ne $currentUserPath })) -join [System.IO.Path]::PathSeparator
     $env:PSModulePath = $newPath
-    Write-OutputVerbose "✔️ PSModulePath normalized to prioritize CurrentUser."
+    Write-OutputVerbose "[OK] PSModulePath normalized to prioritize CurrentUser."
 } else {
-    Write-OutputVerbose "✔️ PSModulePath already prioritizes CurrentUser."
+    Write-OutputVerbose "[OK] PSModulePath already prioritizes CurrentUser."
 }
 #endregion
 
@@ -176,28 +175,28 @@ if (-not (Test-Path -Path $examplesDir)) {
 $analyzerResults = Invoke-ScriptAnalyzer -Path $repoRoot -Recurse
 if ($PSCmdlet.ShouldProcess($reportPath, "Generate PSScriptAnalyzer Report")) {
     $analyzerResults | ConvertTo-Json -Depth 5 | Out-File -FilePath $reportPath -Encoding UTF8
-    Write-OutputVerbose "✔️ PSScriptAnalyzer report saved to: $reportPath"
+    Write-OutputVerbose "[OK] PSScriptAnalyzer report saved to: $reportPath"
 }
 
 # Human-readable summary
 if (-not $Quiet) {
     if ($analyzerResults.Count -eq 0) {
-        Write-Host "`n[PSScriptAnalyzer Summary]" -ForegroundColor Green
-        Write-Host "  No issues found. Excellent!" -ForegroundColor Green
+        Write-Information "`n[PSScriptAnalyzer Summary]"
+        Write-Information "  No issues found. Excellent!"
     } else {
         $errors = $analyzerResults | Where-Object { $_.Severity -eq 'Error' }
         $warnings = $analyzerResults | Where-Object { $_.Severity -eq 'Warning' }
         $info = $analyzerResults | Where-Object { $_.Severity -eq 'Information' }
 
-        Write-Host "`n[PSScriptAnalyzer Summary]" -ForegroundColor Yellow
-        Write-Host "  Total Issues: $($analyzerResults.Count)"
-        Write-Host "  - Errors: $($errors.Count)" -ForegroundColor Red
-        Write-Host "  - Warnings: $($warnings.Count)" -ForegroundColor Yellow
-        Write-Host "  - Information: $($info.Count)" -ForegroundColor Cyan
+        Write-Information "`n[PSScriptAnalyzer Summary]"
+        Write-Information "  Total Issues: $($analyzerResults.Count)"
+        Write-Information "  - Errors: $($errors.Count)"
+        Write-Information "  - Warnings: $($warnings.Count)"
+        Write-Information "  - Information: $($info.Count)"
 
         if ($errors.Count -gt 0) {
-            Write-Host "`nErrors found:" -ForegroundColor Red
-            $errors | ForEach-Object { Write-Host "  - $($_.ScriptName):$($_.Line): $($_.Message)" }
+            Write-Information "`nErrors found:"
+            $errors | ForEach-Object { Write-Information "  - $($_.ScriptName):$($_.Line): $($_.Message)" }
         }
     }
 }
@@ -209,5 +208,5 @@ if (($analyzerResults | Where-Object { $_.Severity -eq 'Error' }).Count -gt 0) {
     exit 1
 }
 
-Write-OutputVerbose "`n✅ Prerequisite check completed successfully."
+Write-OutputVerbose "`n[OK] Prerequisite check completed successfully."
 #endregion

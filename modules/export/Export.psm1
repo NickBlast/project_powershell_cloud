@@ -15,6 +15,10 @@
 .EXAMPLE
     PS> $schema = Get-DatasetSchema -DatasetName 'Entra.Groups'
     PS> if ($schema) { #... use schema ... }
+.OUTPUTS
+    [psobject]
+.NOTES
+    Returns the parsed JSON schema object, or $null if the file is not found or invalid.
 #>
 function Get-DatasetSchema {
     [CmdletBinding()]
@@ -23,7 +27,11 @@ function Get-DatasetSchema {
         [string]$DatasetName
     )
 
-    $schemaPath = Join-Path $PSScriptRoot '..' '..' 'docs' 'schemas' "$($DatasetName).schema.json"
+    $root = Join-Path -Path $PSScriptRoot -ChildPath '..'
+    $root = Join-Path -Path $root -ChildPath '..'
+    $schemaDir = Join-Path -Path $root -ChildPath 'docs'
+    $schemaDir = Join-Path -Path $schemaDir -ChildPath 'schemas'
+    $schemaPath = Join-Path -Path $schemaDir -ChildPath "$($DatasetName).schema.json"
     $schemaPath = Resolve-Path -Path $schemaPath -ErrorAction SilentlyContinue
 
     if (-not (Test-Path -Path $schemaPath)) {
@@ -55,9 +63,12 @@ function Get-DatasetSchema {
 .EXAMPLE
     PS> $isValid = Test-ObjectAgainstSchema -InputObject $myObjects -Schema $mySchema -ErrorVariable validationErrors
     PS> if (-not $isValid) { $validationErrors | Format-List }
+.NOTES
+    This function provides basic validation and is not a full JSON schema validator.
 #>
 function Test-ObjectAgainstSchema {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [psobject[]]$InputObject,
@@ -85,9 +96,7 @@ function Test-ObjectAgainstSchema {
             foreach ($prop in $obj.PSObject.Properties) {
                 $propName = $prop.Name
                 if ($properties.$propName) {
-                    $expectedType = $properties.$propName.type
-                    # Simple type check, can be expanded
-                    # For now, we just check if it exists. A full implementation would be more robust.
+                    # Placeholder: type validation can be implemented here if needed.
                 }
             }
         }
@@ -115,6 +124,10 @@ function Test-ObjectAgainstSchema {
     An array of PSObjects to flatten.
 .EXAMPLE
     PS> $flatObjects = ConvertTo-FlatRecord -InputObject $complexObjects
+.OUTPUTS
+    [psobject[]]
+.NOTES
+    This function is used to prepare objects for CSV export, where complex properties need to be serialized.
 #>
 function ConvertTo-FlatRecord {
     [CmdletBinding()]
@@ -160,6 +173,10 @@ function ConvertTo-FlatRecord {
     The semantic version of the dataset schema.
 .EXAMPLE
     PS> Write-Export -DatasetName 'Entra.Users' -Objects $users -OutputPath .\exports -Formats 'csv','json' -ToolVersion '1.0.0' -DatasetVersion '1.1.0'
+.OUTPUTS
+    None
+.NOTES
+    This is the primary function for writing standardized dataset exports.
 #>
 function Write-Export {
     [CmdletBinding()]
@@ -198,7 +215,7 @@ function Write-Export {
         dataset_version = $DatasetVersion
     }
 
-    $baseFilePath = Join-Path $OutputPath $DatasetName
+    $baseFilePath = Join-Path -Path $OutputPath -ChildPath $DatasetName
 
     foreach ($format in $Formats) {
         $filePath = "$baseFilePath.$format"
@@ -208,7 +225,7 @@ function Write-Export {
             'csv' {
                 $flatObjects = ConvertTo-FlatRecord -InputObject $Objects
                 $exportData = $flatObjects | Select-Object @{N='generated_at';E={$metadata.generated_at}}, @{N='tool_version';E={$metadata.tool_version}}, @{N='dataset_version';E={$metadata.dataset_version}}, *
-                
+
                 $exportParams = @{ InputObject = $exportData; Path = $filePath; NoTypeInformation = $true }
                 if ($schema -and $schema.properties) {
                     $headers = @('generated_at', 'tool_version', 'dataset_version') + ($schema.properties.PSObject.Properties.Name)
@@ -221,7 +238,7 @@ function Write-Export {
                 }
             }
             'json' {
-                $jsonData = @{ 
+                $jsonData = @{
                     metadata = $metadata
                     data = $Objects
                 }
