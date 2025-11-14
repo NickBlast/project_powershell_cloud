@@ -211,7 +211,7 @@ validate_modules() {
       }
     }
 
-    Write-Host "All required modules are available."
+    Write-Information "All required modules are available."
   '
 
   progress "Module validation passed"
