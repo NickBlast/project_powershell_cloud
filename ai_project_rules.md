@@ -2,11 +2,12 @@
 _Last Updated: 2025-11-13_
 
 ## General Principles
-- **Universal runbooks:** Read the root `AGENTS.md` (plus any nested overrides) and `.clinerules/*.md` before coding. Those documents already consolidate mission, operating steps, coding standards, schema discipline, and acceptance snippets—reuse them instead of creating parallel guidance.
-- **Shared task tracking:** Treat `todo.md` as the canonical, cross-agent plan. Add micro-PR steps before implementation and remove entries once work is completed and reviewed.
-- **PowerShell-only toolchain:** Use the prescribed commands (`pwsh ./scripts/ensure-prereqs.ps1`, `Invoke-ScriptAnalyzer`, `Invoke-Pester`, `./.export_schema_test.ps1`) and keep logic in PowerShell modules/scripts with structured logging from `/modules/logging`.
-- **Schema + logging safeguards:** Never emit fields absent from `docs/schemas/<dataset>.schema.json`; ensure `generated_at`, `tool_version`, and `dataset_version` headers exist; log via `Write-StructuredLog` with redaction.
-- **Project learning loop:** When a recurring, project-specific issue is fixed, document the prevention rule under “Error-Derived Rules” (with context and optional example) so every assistant benefits.
+- Anchor every task to `AGENTS.md` plus the repo contract/design docs; implement exclusively in PowerShell 7.4+ with `lower_case_with_underscores` directories and approved Verb-Noun naming.
+- Run `scripts/ensure-prereqs.ps1`, `Invoke-ScriptAnalyzer -Path . -Recurse`, `Invoke-Pester`, and `./.export_schema_test.ps1` (when exports change) during each wave; do not merge with analyzer warnings or failing tests.
+- Keep schema discipline absolute: exports must include `generated_at`, `tool_version`, `dataset_version`, validate against `docs/schemas/<dataset>.schema.json`, and trigger compliance/doc updates plus dataset version bumps whenever schemas change.
+- Logging is mandatory: instrument scripts with `modules/logging` (`Write-StructuredLog`, correlation IDs, redaction) and store sanitized samples only under `examples/`, `logs/`, `reports/`, or `outputs/`.
+- Use SecretManagement for credentials, pin module versions via PSResourceGet, and document required permissions in `docs/compliance`.
+- Maintain the wave/micro-PR cadence by updating `todo.md`, `audit_notes/`, and `CHANGELOG.md` with problem, solution, validation evidence, schema impact, and follow-ups.
 
 ## Error-Derived Rules
-- _None yet; add entries when project-specific issues are discovered._
+- _None yet — add the first entry here when a recurring issue is resolved._

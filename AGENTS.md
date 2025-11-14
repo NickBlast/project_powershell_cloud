@@ -1,99 +1,77 @@
-# AGENTS.md — AI Agent Runbook
+# AGENTS.md — Unified Runbook
 
-This document is the authoritative runbook for **all** assistants (Codex CLI, Gemini CLI, Cline, Cursor, Copilot, etc.) working in `project_powershell_cloud`. Always read this file, `todo.md`, and `ai_project_rules.md` before you touch code. Nested `AGENTS.md` files (if ever added) override instructions only for their directory tree.
-
----
+This file is the single source of truth for every assistant (Codex, Gemini, Cline, Cursor, Copilot, etc.) working in `project_powershell_cloud`. Read this runbook, `ai_project_rules.md`, and `todo.md` before touching code.
 
 ## 1. Overview & Mission
-- Build a **PowerShell-only IAM inventory** tool that exports deterministic CSV + JSON data for Azure-first scenarios (AWS optional where scripts exist).
-- Mission reminders (from `.clinerules/00-overview.md` & `01-mission.md`):
-  - Deliver audit-grade exports with schemas stored under `docs/schemas/`.
-  - No secrets on disk; use SecretManagement.
-  - Operate in wave-sized chunks, pausing for human review.
-- Source-of-record docs every agent must know:
-  - `docs/reference/repo_contract.md`
-  - `docs/reference/powershell_repo_design.md`
-  - `docs/reference/powershell_standards.md`
-  - `.clinerules/*.md` for additional color (overview, steps, coding standards, schema quality, acceptance snippets).
+- Build a PowerShell-only IAM inventory/export tool that emits deterministic CSV + JSON for Azure-first datasets (extend to AWS/GCP only when scripts exist).
+- Deliver audit-grade evidence: schema-validated outputs with `generated_at`, `tool_version`, `dataset_version`; never store secrets/PII in the repo.
+- Source-of-record docs: `docs/reference/repo_contract.md`, `docs/reference/powershell_repo_design.md`, `docs/reference/powershell_standards.md`, `docs/reference/powershell_sources_of_record.md`, `docs/reference/help_authoring.md`, `docs/reference/psscriptanalyzer_ruleset.md`.
 
-## 2. Project Structure & Ownership
-- `modules/`
-  - `connect/` tenant/auth helpers (`Connect.psm1`)
-  - `export/` dataset & schema-aware logic (`Export.psm1`)
-  - `logging/` structured logging utilities (`Logging.psm1`)
-- `scripts/` — runnable entrypoints (`export-*.ps1`)
-- `docs/` — runbooks, schemas, compliance tables, appendices
-- `reports/`, `logs/`, `outputs/` — generated artifacts (never commit secrets)
-- Root helpers: `.export_schema_test.ps1`, `.editorconfig`, `.github/workflows/`
-- Keep schemas in `docs/schemas/`; update `docs/compliance` when datasets change.
+## 2. Project Structure & Key Paths
+- `modules/` — reusable logic (`connect/`, `export/`, `logging/`); keep normalization, schema enforcement, and logging here.
+- `scripts/` — thin CLI entry points such as `scripts/export-*.ps1` and `scripts/ensure-prereqs.ps1`.
+- `docs/` — reference docs, schemas (`docs/schemas/`), compliance mappings, prompt banks.
+- `audit_notes/` — per-wave evidence; log artifacts after each wave/micro-PR.
+- `reports/`, `logs/`, `outputs/` — generated artifacts (never commit secrets); `examples/` for sanitized samples.
+- Root helpers: `.export_schema_test.ps1`, `.editorconfig`, `.github/workflows/`.
 
-## 3. Required Governance Files
-- `todo.md` — shared Active Tasks checklist. Sync every plan and mark completed work. Include validation steps or references when possible.
-- `ai_project_rules.md` — project-specific behavior and the “Error-Derived Rules” log (update the “Last Updated” stamp when editing).
-- `audit_notes/` — wave-by-wave evidence (environment bootstrap through final summary).
+## 3. Governance Files & Read Order
+1. `AGENTS.md` (this runbook).
+2. `ai_project_rules.md` for project-specific guardrails and error-derived lessons.
+3. `todo.md` as the single backlog.
+4. `docs/reference/*.md` for detailed standards.
+Other prompt banks (`.clinerules/`, `.gemini/`, `docs/prompts/`, `clinerules-bank/`) are reference only.
 
-## 4. Build, Test & Validation
-- Install prereqs + lint bootstrap: `pwsh ./scripts/ensure-prereqs.ps1`
-- Static analysis (treat warnings as errors): `pwsh -Command "Invoke-ScriptAnalyzer -Path . -Recurse"`
-- Run exports (dry run encouraged): `pwsh -File ./scripts/export-azure_rbac_assignments.ps1 -WhatIf`
-- Schema sanity: `pwsh -File ./.export_schema_test.ps1`
-- Tests: `pwsh -Command "Invoke-Pester"` (use `-Output Detailed` when needed)
-- Sample outputs: store under `/examples/` or `/outputs/` and redact sensitive data.
+## 4. First-Run Environment Review
+- Skim `README.md`, `CHANGELOG.md`, and `todo.md` to understand current priorities.
+- Confirm PowerShell 7.4+; run `pwsh -File ./scripts/ensure-prereqs.ps1` to install modules via PSResourceGet.
+- Review relevant modules/scripts plus `docs/schemas/<dataset>.schema.json` and `docs/compliance` entries before editing.
+- Capture blockers or context gaps in `todo.md` or `audit_notes/`.
 
-## 5. Operating Steps (per `.clinerules/02-operating-steps.md`)
-1. **Read context** — repo contract, design doc, target module/script, schemas/runbooks.
-2. **Plan first** — short checklist covering touched files, schema impact, tests, acceptance.
-3. **Pre-flight** — run `ensure-prereqs` and ScriptAnalyzer; note/fix findings.
-4. **Implement** — PowerShell with comment-based help, structured logging (`/modules/logging`), retry/backoff for throttling, official cmdlets only.
-5. **Schema discipline** — outputs must match `docs/schemas/<dataset>.schema.json`; pause for approval before changing schemas and bump dataset versions when needed.
-6. **Validation** — rerun Pester, ScriptAnalyzer, generate sample exports.
-7. **Changelog & PR prep** — update `CHANGELOG.md`, craft PR summary (problem, solution, acceptance, lint/test evidence, schema notes, compliance updates).
+## 5. Build, Test & Validation Commands
+- `pwsh -File ./scripts/ensure-prereqs.ps1` — dependency bootstrap and lint sanity check.
+- `pwsh -Command "Invoke-ScriptAnalyzer -Path . -Recurse"` — treat warnings as errors; document suppressions.
+- `pwsh -Command "Invoke-Pester"` — contract tests (`-Output Detailed` when needed).
+- `pwsh -File ./.export_schema_test.ps1` — schema sanity when exports change.
+- `pwsh -File ./scripts/export-<dataset>.ps1 -WhatIf` — dry-run dataset validation.
+- Store sanitized sample outputs under `examples/` (or redacted `outputs/`), never committing secrets.
 
-## 6. Coding Style & Naming (see `.clinerules/03-coding-standards.md`)
-- PowerShell indentation = 4 spaces; LF endings.
-- Functions: Verb-Noun (approved verbs only), PascalCase for exported functions, lowerCamelCase locals.
-- Modules contain reusable logic; scripts stay thin.
-- Include comment-based help with runnable examples for every exported function or script.
-- Explicit cmdlet imports; no aliases; prefer pure functions returning objects (formatting occurs in export layer).
+## 6. Planning & Micro-PR Workflow
+1. **Plan** — produce a short checklist (touched files, schema/test impact, validation steps) before coding; keep waves small.
+2. **Implement** — PowerShell only, no aliases, comment-based help for exported functions, structured logging via `modules/logging`, retry/backoff for throttling.
+3. **Validate** — rerun ScriptAnalyzer, Pester, schema tests, and exports; address all findings.
+4. **Document** — update `CHANGELOG.md`, affected docs, and `audit_notes/wave<N>_*.md` with changes and evidence.
+5. **Review posture** — present results as proposals, summarize validation output, and wait for explicit approval before proceeding.
 
-## 7. Schema, Logging & Quality Gates (`.clinerules/04-schema-and-quality.md`)
-- Never emit fields absent from `docs/schemas/<dataset>.schema.json`.
-- Each dataset output requires `generated_at`, `tool_version`, `dataset_version`.
-- Exports must be idempotent (safe overwrites for same dataset_version).
-- Use `Write-StructuredLog` with redaction before logging PII/secrets.
-- Do not merge with ScriptAnalyzer warnings or failing tests; document narrow suppressions in `docs/reference/psscriptanalyzer_ruleset.md`.
-- Avoid unapproved external CLIs/modules; stick to Microsoft-supported tooling.
+## 7. Coding Style & Naming
+- Directories use `lower_case_with_underscores`.
+- Functions/scripts follow approved `Verb-Noun`; underscores allowed inside nouns.
+- Parameters and exported function names use PascalCase; locals use lowerCamelCase.
+- Keep modules focused on reusable logic, scripts as orchestrators, and include comment-based help per `docs/reference/help_authoring.md`.
 
-## 8. Acceptance Criteria Templates (`.clinerules/05-acceptance-snippets.md`)
-- Example: **Azure RBAC Assignments**
-  - All scopes covered; counts match portal samples.
-  - CSV/JSON validate against `/docs/schemas/azure_rbac_assignments.schema.json` (v1.0).
-  - Deterministic reruns; logs redact PII.
-- Use these snippets when defining new datasets or enhancements; add new entries as datasets expand.
+## 8. Schema, Logging & Data Discipline
+- Never emit fields absent from `docs/schemas/<dataset>.schema.json`; seek approval before schema changes and bump `dataset_version`.
+- Every dataset writes CSV + JSON plus metadata fields; reruns must be idempotent.
+- Validate objects against schemas before writing; update `docs/compliance` when datasets change.
+- Use `Write-StructuredLog` with correlation IDs and redaction; keep generated artifacts under `logs/`, `reports/`, or `outputs/` only after sanitization.
 
-## 9. Commit, Branch & PR Workflow
-- Branch naming: `feat/<area>__<slug>`, `fix/<area>__<slug>`, `docs/<area>__<slug>` (wave-specific names allowed, e.g., `fix/pwsh-wave-3-analyzer`).
-- Commits: Conventional Commits (`type(scope): summary`), single-purpose, imperative.
-- PR requirements:
-  - Summary of changes, linked issues, sample outputs/logs (redacted), validation steps.
-  - Annotate schema or compliance impacts.
-  - Include analyzer/test status and follow-up tasks referencing `todo.md`.
-  - Pause after each wave for human review.
+## 9. Work Tracking via `todo.md`
+- Treat `todo.md` as the authoritative backlog; add actionable checkboxes with owners or context.
+- Update status immediately after work completes or requirements change to keep other agents aligned.
 
-## 10. Security & Configuration
-- Use PowerShell 7.4+; modules install to CurrentUser via `scripts/ensure-prereqs.ps1`.
-- No secrets in repo; rely on SecretManagement + environment auth.
-- Validate that generated artifacts stay in `reports/`, `logs/`, or `outputs/` and remain uncommitted unless scrubbed for documentation.
-- Respect policy: CI uses `AllSigned`, developers may use `RemoteSigned`.
+## 10. Project Rules & Learning Loop (`ai_project_rules.md`)
+- Capture project-specific behaviors (schema/logging expectations, retries, tooling quirks) in `ai_project_rules.md`.
+- Log new lessons as “Error-Derived Rules” with dates and context; update the “Last Updated” stamp whenever the file changes.
 
-## 11. Cross-Agent Expectations
-- Share findings in `todo.md` and `ai_project_rules.md` so every assistant has the same context.
-- Before editing any file:
-  - Read this AGENTS runbook plus any nested version within the directory.
-  - Check `todo.md` for existing tasks to avoid duplication.
-  - Review `ai_project_rules.md` for project-specific lessons/errors.
-- If you create new runbooks or schema notes, reference them here and in `ai_project_rules.md`.
+## 11. Execution Guardrails & Agent Etiquette
+- Default to read-only commands; request approval before running anything that writes outside sanctioned folders.
+- Never commit secrets, agent-local files, or sensitive host details.
+- Follow branch naming `feat|fix|docs/<area>__<slug>` (or `type/topic-wave-N-slug`) and Conventional Commits; keep waves under ~25 files/600 lines when possible.
+- Summarize validation steps in responses/PRs and pause for human review after each wave.
 
----
+## 12. Optional References & Prompt Banks
+- `.clinerules/*`, `.gemini/*`, `docs/prompts/*`, and `clinerules-bank/*` provide historical prompts/templates. Use them for context only; they do not override this runbook.
+- If you extend those archives, mention it in `ai_project_rules.md` for discoverability.
 
-**Always** treat the user (Product Owner) as the merge authority. Present work as proposals, include validation evidence, and wait for explicit approval before assuming anything is final.
+## 13. Runbook Change Notes
+- When updating this file, reference the change in your PR summary and ensure related guardrails are captured in `ai_project_rules.md`.
