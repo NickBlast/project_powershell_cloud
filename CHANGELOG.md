@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased] - 2025-11-13
+### Fixed
+- Hardened `scripts/ensure-prereqs.ps1` to pin PSResourceGet/PSGallery module versions, respect Quiet/WhatIf, normalize PSModulePath, and fail when PSScriptAnalyzer warnings or errors are detected.
+
 ## [0.2.0] - 2025-08-25
 ### Fixed
 - Resolved all PSScriptAnalyzer warnings, including fixing trailing whitespace and ensuring the use of named parameters for `Join-Path` in `scripts/export-entra_role_assignments.ps1`.

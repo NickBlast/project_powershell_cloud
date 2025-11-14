@@ -1,28 +1,27 @@
+#requires -Version 7.4
 <#
 .SYNOPSIS
     Ensures all prerequisites for the PowerShell IAM Inventory project are met.
 .DESCRIPTION
     This script verifies the PowerShell environment, installs required modules with pinned versions,
-    and runs a quality check using PSScriptAnalyzer.
-
-    It is idempotent and can be run multiple times safely.
+    and runs a quality check using PSScriptAnalyzer. Analyzer warnings are treated as errors to keep
+    repository hygiene aligned with project guardrails.
 
     Key actions:
     1. Verifies PowerShell version is 7.4 or higher.
-    2. Ensures PSResourceGet is installed and available.
-    3. Installs or updates required modules to the CurrentUser scope.
+    2. Ensures Microsoft.PowerShell.PSResourceGet is installed and imported.
+    3. Installs or updates required modules to pinned versions in the CurrentUser scope.
     4. Normalizes the PSModulePath to prioritize the CurrentUser scope.
     5. Runs PSScriptAnalyzer on the entire repository.
     6. Emits a JSON report of the analysis to './examples/prereq_report.json'.
-    7. Exits with a non-zero code if PSScriptAnalyzer finds errors.
+    7. Exits with a non-zero code if PSScriptAnalyzer finds warnings or errors.
 .PARAMETER WhatIf
     Shows what actions would be taken without actually executing them.
 .PARAMETER Quiet
-    Suppresses all console output except for critical errors and the final summary.
-    The JSON report is still written.
+    Suppresses informational output. Errors are still written, and the JSON report is produced.
 .EXAMPLE
     PS> ./scripts/ensure-prereqs.ps1
-    Runs the full prerequisite check, displaying verbose output.
+    Runs the full prerequisite check, displaying informational output.
 .EXAMPLE
     PS> ./scripts/ensure-prereqs.ps1 -WhatIf
     Displays the modules that would be installed or updated without making changes.
@@ -32,7 +31,7 @@
 .NOTES
     Author: Gemini
     License: See LICENSE file.
-    Version: 1.0.0
+    Version: 1.1.0
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
@@ -40,173 +39,176 @@ param(
 )
 
 #region Setup and Configuration
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
+$InformationPreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
 
-$requiredPSVersion = '7.4.0'
+$requiredPSVersion = [Version]'7.4.0'
+$psResourceModuleName = 'Microsoft.PowerShell.PSResourceGet'
+$psResourceModuleVersion = [Version]'1.0.5'
 
-# Define required modules with minimum versions
-$requiredModules = @{
-    'Az.Accounts' = '2.12.1'
-    'Az.Resources' = '6.6.0'
-    'ImportExcel' = '7.8.5'
-    'PSScriptAnalyzer' = '1.21.0'
-    'Pester' = '5.5.0'
-    'Microsoft.PowerShell.SecretManagement' = '1.1.2'
-    # Microsoft.Graph is handled separately due to its submodule structure.
-    # We ensure the base module is present, but specific submodules are installed on-demand by other scripts.
-    'Microsoft.Graph' = '2.9.0'
-}
+$requiredModules = @(
+    @{ Name = 'Az.Accounts'; Version = '2.12.1' }
+    @{ Name = 'Az.Resources'; Version = '6.6.0' }
+    @{ Name = 'ImportExcel'; Version = '7.8.5' }
+    @{ Name = 'PSScriptAnalyzer'; Version = '1.21.0' }
+    @{ Name = 'Pester'; Version = '5.5.0' }
+    @{ Name = 'Microsoft.PowerShell.SecretManagement'; Version = '1.1.2' }
+    @{ Name = 'Microsoft.Graph'; Version = '2.9.0' }
+)
 
-$repoRoot = Resolve-Path -Path (Join-Path $PSScriptRoot '..')
-$examplesDir = Join-Path $repoRoot 'examples'
-$reportPath = Join-Path $examplesDir 'prereq_report.json'
+$repoRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..')).Path
+$examplesDir = Join-Path -Path $repoRoot -ChildPath 'examples'
+$reportPath = Join-Path -Path $examplesDir -ChildPath 'prereq_report.json'
 
-# Helper for writing output respecting -Quiet
-function Write-OutputVerbose {
+function Write-Step {
     param(
+        [Parameter(Mandatory)]
         [string]$Message
     )
-    if (-not $Quiet) {
-        Write-Host $Message
-    }
+
+    Write-Information $Message
     Write-Verbose $Message
 }
 #endregion
 
 #region 1. PowerShell Version Check
-Write-OutputVerbose "Step 1: Verifying PowerShell version..."
+Write-Step "Step 1: Verifying PowerShell version..."
 Write-Verbose "Required version: $requiredPSVersion or higher."
 Write-Verbose "Detected version: $($PSVersionTable.PSVersion)"
 
-if ($PSVersionTable.PSVersion -lt [Version]$requiredPSVersion) {
+if ($PSVersionTable.PSVersion -lt $requiredPSVersion) {
     Write-Error "PowerShell version $($PSVersionTable.PSVersion) is not supported. Please upgrade to version $requiredPSVersion or higher."
     exit 1
 }
-Write-OutputVerbose "[OK] PowerShell version check passed."
+Write-Step "[OK] PowerShell version check passed."
 #endregion
 
 #region 2. PSResourceGet Check
-Write-OutputVerbose "`nStep 2: Verifying PSResourceGet module..."
+Write-Step "`nStep 2: Verifying $psResourceModuleName..."
+
 try {
-    $psResourceGetModule = Get-Module -Name PSResourceGet -ListAvailable
-    if (-not $psResourceGetModule) {
-        Write-OutputVerbose "PSResourceGet not found. Attempting to install from PSGallery..."
-        if ($PSCmdlet.ShouldProcess('PSResourceGet', 'Install Module')) {
-            Install-Module -Name PSResourceGet -Repository PSGallery -Force -Scope CurrentUser
-            Write-OutputVerbose "[OK] PSResourceGet installed successfully."
+    $psResourceGetModule = Get-Module -Name $psResourceModuleName -ListAvailable |
+        Sort-Object -Property Version -Descending |
+        Select-Object -First 1
+
+    if (-not $psResourceGetModule -or $psResourceGetModule.Version -lt $psResourceModuleVersion) {
+        Write-Step "PSResourceGet not found or below version $psResourceModuleVersion. Installing..."
+        if ($PSCmdlet.ShouldProcess($psResourceModuleName, "Install version $psResourceModuleVersion")) {
+            Install-Module -Name $psResourceModuleName -Repository PSGallery -Scope CurrentUser -Force -AllowClobber -RequiredVersion $psResourceModuleVersion | Out-Null
         }
     }
-    else {
-        Write-OutputVerbose "[OK] PSResourceGet is available."
-    }
+
+    Import-Module -Name $psResourceModuleName -MinimumVersion $psResourceModuleVersion -ErrorAction Stop | Out-Null
+    $psResourceGetModule = Get-Module -Name $psResourceModuleName
+    Write-Step "[OK] $psResourceModuleName version $($psResourceGetModule.Version) is available."
 }
 catch {
-    Write-Error "Failed to find or install PSResourceGet. Please install it manually from the PowerShell Gallery."
+    Write-Error "Failed to find, install, or import $psResourceModuleName. $_"
     exit 1
 }
 #endregion
 
 #region 3. Install/Upgrade Modules
-Write-OutputVerbose "`nStep 3: Installing/updating required modules..."
-foreach ($moduleName in $requiredModules.Keys) {
-    $requiredVersion = $requiredModules[$moduleName]
-    Write-Verbose "Checking module: $moduleName (minimum version: $requiredVersion)"
+Write-Step "`nStep 3: Installing/updating required modules..."
+foreach ($module in $requiredModules) {
+    $moduleName = $module.Name
+    $requiredVersion = [Version]$module.Version
+    Write-Verbose "Checking module: $moduleName (required version: $requiredVersion)"
 
-    $installedModule = Get-Module -Name $moduleName -ListAvailable
-    if ($installedModule -and $installedModule.Version -ge [Version]$requiredVersion) {
-        Write-OutputVerbose "  - $moduleName ($($installedModule.Version)) is already installed and meets requirements."
+    $installedModule = Get-InstalledPSResource -Name $moduleName -ErrorAction SilentlyContinue |
+        Sort-Object -Property Version -Descending |
+        Select-Object -First 1
+
+    if ($installedModule -and [Version]$installedModule.Version -eq $requiredVersion) {
+        Write-Step "  - $moduleName ($($installedModule.Version)) already installed."
         continue
     }
 
-    $targetVersion = if ($installedModule) { "from $($installedModule.Version) to >$requiredVersion" } else { $requiredVersion }
-    if ($PSCmdlet.ShouldProcess("$moduleName", "Install/Update module $targetVersion")) {
+    $actionMessage = if ($installedModule) {
+        "Update $moduleName from $($installedModule.Version) to $requiredVersion"
+    }
+    else {
+        "Install $moduleName version $requiredVersion"
+    }
+
+    if ($PSCmdlet.ShouldProcess($moduleName, $actionMessage)) {
         try {
-            Write-OutputVerbose "  - Installing/Updating $moduleName..."
-            # Use -RequiredVersion for Pester to avoid pre-release if not specified
-            $installParams = @{
-                Name = $moduleName
-                MinimumVersion = $requiredVersion
-                Repository = 'PSGallery'
-                Scope = 'CurrentUser'
-                Force = $true
-                AcceptLicense = $true
-            }
-            Install-PSResource @installParams
-            $newVersion = (Get-Module -Name $moduleName -ListAvailable).Version
-            Write-OutputVerbose "  [OK] Successfully installed $moduleName version $newVersion."
+            Install-PSResource -Name $moduleName -Version $requiredVersion -Repository PSGallery -Scope CurrentUser -AcceptLicense -ErrorAction Stop | Out-Null
+            Write-Step "  [OK] $actionMessage completed."
         }
         catch {
-            Write-Error "Failed to install module '$moduleName'. Error: $_"
-            # Continue to the next module
+            Write-Error "Failed to install $moduleName version $requiredVersion. $_"
+            exit 1
         }
     }
 }
 #endregion
 
 #region 4. Normalize PSModulePath
-Write-OutputVerbose "`nStep 4: Normalizing PSModulePath..."
-$currentUserPath = [Environment]::GetFolderPath('MyDocuments') + "\WindowsPowerShell\Modules"
-# For PowerShell 7, the path is different.
+Write-Step "`nStep 4: Normalizing PSModulePath..."
+$currentUserPath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'WindowsPowerShell\Modules'
 if ($IsCoreCLR) {
-    $currentUserPath = [Environment]::GetFolderPath('MyDocuments') + "\PowerShell\Modules"
+    $currentUserPath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'PowerShell\Modules'
 }
 
 $modulePaths = $env:PSModulePath -split [System.IO.Path]::PathSeparator
-if ($modulePaths[0] -ne $currentUserPath) {
+if (-not $modulePaths -or $modulePaths[0] -ne $currentUserPath) {
     Write-Verbose "CurrentUser module path is not prioritized. Adjusting..."
-    $newPath = ($currentUserPath, ($modulePaths | Where-Object { $_ -ne $currentUserPath })) -join [System.IO.Path]::PathSeparator
-    $env:PSModulePath = $newPath
-    Write-OutputVerbose "[OK] PSModulePath normalized to prioritize CurrentUser."
-} else {
-    Write-OutputVerbose "[OK] PSModulePath already prioritizes CurrentUser."
+    $dedupedPaths = $modulePaths | Where-Object { $_ -and $_ -ne $currentUserPath }
+    $env:PSModulePath = ($currentUserPath, $dedupedPaths) -join [System.IO.Path]::PathSeparator
+    Write-Step "[OK] PSModulePath normalized to prioritize CurrentUser."
+}
+else {
+    Write-Step "[OK] PSModulePath already prioritizes CurrentUser."
 }
 #endregion
 
 #region 5. Run PSScriptAnalyzer
-Write-OutputVerbose "`nStep 5: Running PSScriptAnalyzer..."
+Write-Step "`nStep 5: Running PSScriptAnalyzer..."
 if (-not (Test-Path -Path $examplesDir)) {
-    if ($PSCmdlet.ShouldProcess($examplesDir, "Create Directory")) {
-        New-Item -Path $examplesDir -ItemType Directory | Out-Null
+    if ($PSCmdlet.ShouldProcess($examplesDir, 'Create Directory')) {
+        New-Item -Path $examplesDir -ItemType Directory -Force | Out-Null
         Write-Verbose "Created directory: $examplesDir"
     }
 }
 
 $analyzerResults = Invoke-ScriptAnalyzer -Path $repoRoot -Recurse
-if ($PSCmdlet.ShouldProcess($reportPath, "Generate PSScriptAnalyzer Report")) {
-    $analyzerResults | ConvertTo-Json -Depth 5 | Out-File -FilePath $reportPath -Encoding UTF8
-    Write-OutputVerbose "[OK] PSScriptAnalyzer report saved to: $reportPath"
+if ($PSCmdlet.ShouldProcess($reportPath, 'Generate PSScriptAnalyzer Report')) {
+    $analyzerResults | ConvertTo-Json -Depth 6 | Out-File -FilePath $reportPath -Encoding utf8
+    Write-Step "[OK] PSScriptAnalyzer report saved to: $reportPath"
 }
 
-# Human-readable summary
 if (-not $Quiet) {
-    if ($analyzerResults.Count -eq 0) {
-        Write-Information "`n[PSScriptAnalyzer Summary]"
-        Write-Information "  No issues found. Excellent!"
-    } else {
-        $errors = $analyzerResults | Where-Object { $_.Severity -eq 'Error' }
-        $warnings = $analyzerResults | Where-Object { $_.Severity -eq 'Warning' }
-        $info = $analyzerResults | Where-Object { $_.Severity -eq 'Information' }
+    $errors = @($analyzerResults | Where-Object { $_.Severity -eq 'Error' })
+    $warnings = @($analyzerResults | Where-Object { $_.Severity -eq 'Warning' })
+    $info = @($analyzerResults | Where-Object { $_.Severity -eq 'Information' })
 
-        Write-Information "`n[PSScriptAnalyzer Summary]"
-        Write-Information "  Total Issues: $($analyzerResults.Count)"
-        Write-Information "  - Errors: $($errors.Count)"
-        Write-Information "  - Warnings: $($warnings.Count)"
-        Write-Information "  - Information: $($info.Count)"
+    Write-Information "`n[PSScriptAnalyzer Summary]"
+    Write-Information "  Total Issues: $($analyzerResults.Count)"
+    Write-Information "  - Errors: $($errors.Count)"
+    Write-Information "  - Warnings: $($warnings.Count)"
+    Write-Information "  - Information: $($info.Count)"
 
-        if ($errors.Count -gt 0) {
-            Write-Information "`nErrors found:"
-            $errors | ForEach-Object { Write-Information "  - $($_.ScriptName):$($_.Line): $($_.Message)" }
-        }
+    if ($errors.Count -gt 0) {
+        Write-Information "`nErrors:"
+        $errors | ForEach-Object { Write-Information "  - $($_.ScriptName):$($_.Line): $($_.Message)" }
+    }
+
+    if ($warnings.Count -gt 0) {
+        Write-Information "`nWarnings:"
+        $warnings | ForEach-Object { Write-Information "  - $($_.ScriptName):$($_.Line): $($_.Message)" }
     }
 }
 #endregion
 
 #region 6. Exit Code
-if (($analyzerResults | Where-Object { $_.Severity -eq 'Error' }).Count -gt 0) {
-    Write-Error "`nPSScriptAnalyzer found errors. Please review the report and fix them."
+$blockingFindings = $analyzerResults | Where-Object { $_.Severity -in @('Error', 'Warning') }
+if ($blockingFindings.Count -gt 0) {
+    Write-Error "`nPSScriptAnalyzer found blocking issues (warnings are treated as errors). Please review the report and fix them."
     exit 1
 }
 
-Write-OutputVerbose "`n[OK] Prerequisite check completed successfully."
+Write-Step "`n[OK] Prerequisite check completed successfully."
 #endregion
