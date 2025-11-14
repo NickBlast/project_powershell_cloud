@@ -29,7 +29,7 @@
     PS> ./scripts/ensure-prereqs.ps1 -Quiet
     Runs the check with minimal output, useful for automated scripts.
 .NOTES
-    Author: Gemini
+    Author: Nick Lundqusit
     License: See LICENSE file.
     Version: 1.1.0
 #>
@@ -39,6 +39,7 @@ param(
 )
 
 #region Setup and Configuration
+# Establish strict runtime settings, version pins, and directories so every run behaves exactly the same.
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
@@ -63,6 +64,7 @@ $examplesDir = Join-Path -Path $repoRoot -ChildPath 'examples'
 $reportPath = Join-Path -Path $examplesDir -ChildPath 'prereq_report.json'
 $excludedAnalyzerDirectories = @('.git', '.archive', 'examples', 'logs', 'outputs', 'reports')
 
+# Write-Step keeps operator-facing progress messages consistent even when Quiet/Verbose settings change.
 function Write-Step {
     param(
         [Parameter(Mandatory)]
@@ -75,6 +77,7 @@ function Write-Step {
 #endregion
 
 #region Helper Functions
+# Encapsulated helpers keep the main steps terse and guarantee consistent behavior across platforms.
 function Get-CurrentUserModulePath {
     <#
         .SYNOPSIS
@@ -108,6 +111,7 @@ function Get-CurrentUserModulePath {
     return [System.IO.Path]::Combine($homePath, '.local', 'share', 'powershell', 'Modules')
 }
 
+# Determines whether a path should be skipped when running ScriptAnalyzer so we do not lint generated folders.
 function Test-IsExcludedAnalyzerPath {
     param(
         [Parameter(Mandatory)]
@@ -129,6 +133,7 @@ function Test-IsExcludedAnalyzerPath {
 #endregion
 
 #region 1. PowerShell Version Check
+# We fail fast if someone runs an older shell so the rest of the install process does not waste time.
 Write-Step "Step 1: Verifying PowerShell version..."
 Write-Verbose "Required version: $requiredPSVersion or higher."
 Write-Verbose "Detected version: $($PSVersionTable.PSVersion)"
@@ -141,6 +146,7 @@ Write-Step "[OK] PowerShell version check passed."
 #endregion
 
 #region 2. PSResourceGet Check
+# Verifies PSResourceGet is present at the pinned version because every later module install depends on it.
 Write-Step "`nStep 2: Verifying $psResourceModuleName..."
 
 try {
@@ -166,6 +172,7 @@ catch {
 #endregion
 
 #region 3. Install/Upgrade Modules
+# Installs each required module (or upgrades it) so the repo, analyzers, and export scripts run with known bits.
 Write-Step "`nStep 3: Installing/updating required modules..."
 foreach ($module in $requiredModules) {
     $moduleName = $module.Name
@@ -202,6 +209,7 @@ foreach ($module in $requiredModules) {
 #endregion
 
 #region 4. Normalize PSModulePath
+# Moves the CurrentUser module folder to the front of PSModulePath so our pinned modules load before any system copies.
 Write-Step "`nStep 4: Normalizing PSModulePath..."
 $currentUserPath = Get-CurrentUserModulePath
 Write-Verbose "Resolved CurrentUser module path: $currentUserPath"
@@ -226,7 +234,10 @@ else {
 #endregion
 
 #region 5. Run PSScriptAnalyzer
+# Runs the PowerShell linter across the repo, stores a JSON report, and treats any issues as blockers.
 Write-Step "`nStep 5: Running PSScriptAnalyzer..."
+
+# Make sure the report folder exists so saving the analyzer output never fails.
 if (-not (Test-Path -Path $examplesDir)) {
     if ($PSCmdlet.ShouldProcess($examplesDir, 'Create Directory')) {
         New-Item -Path $examplesDir -ItemType Directory -Force | Out-Null
@@ -235,6 +246,7 @@ if (-not (Test-Path -Path $examplesDir)) {
 }
 
 
+# Collect the files we want ScriptAnalyzer to inspect while skipping generated folders.
 try {
     $analysisTargets = Get-ChildItem -Path $repoRoot -Recurse -File -ErrorAction Stop
 }
@@ -255,6 +267,7 @@ if ($analysisCount -eq 0) {
     $analyzerResults = @()
 }
 else {
+    # Invoke the analyzer one file at a time to avoid surprise failures and keep the JSON report deterministic.
     $analyzerResults = @()
     foreach ($analysisPath in $analysisPaths) {
         try {
@@ -301,6 +314,7 @@ if (-not $Quiet) {
 #endregion
 
 #region 6. Exit Code
+# Treat analyzer warnings as failures so CI/CD and humans both know when hygiene needs attention.
 $blockingFindings = @($analyzerResults | Where-Object { $_.Severity -in @('Error', 'Warning') })
 if ($blockingFindings.Count -gt 0) {
     Write-Error "`nPSScriptAnalyzer found blocking issues (warnings are treated as errors). Please review the report and fix them."
