@@ -179,10 +179,12 @@ function Write-StructuredLog {
     # Console Output
     if ($ToJson) {
         $outputString = $logEntry | ConvertTo-Json -Compress -Depth 5
-        Write-Host $outputString
+        # Use Write-Information so the log can participate in standard stream handling instead of Write-Host.
+        Write-Information -MessageData $outputString -Tags 'StructuredLog', $Level
     } else {
         $outputString = "$timestamp [$Level] $redactedMessage"
-        Write-Host $outputString
+        # Write-Information keeps console visibility by default while allowing suppression/redirection as needed.
+        Write-Information -MessageData $outputString -Tags 'StructuredLog', $Level
     }
 
     # File Output
