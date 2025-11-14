@@ -75,6 +75,39 @@ function Write-Step {
 #endregion
 
 #region Helper Functions
+function Get-CurrentUserModulePath {
+    <#
+        .SYNOPSIS
+            Resolves the CurrentUser module installation path without assuming MyDocuments is populated.
+
+        .DESCRIPTION
+            PowerShell normally stores CurrentUser modules under a directory derived from the user's
+            Documents folder.  In containerized Linux environments, [Environment]::GetFolderPath('MyDocuments')
+            can return an empty string which causes Join-Path to throw.  This helper centralizes the
+            resolution logic and provides OS-specific fallbacks that align with the defaults documented in
+            about_PSModulePath.
+    #>
+
+    $documentsPath = [Environment]::GetFolderPath('MyDocuments')
+    if (-not [string]::IsNullOrWhiteSpace($documentsPath)) {
+        $moduleRootName = if ($IsCoreCLR) { 'PowerShell' } else { 'WindowsPowerShell' }
+        $documentsModuleRoot = Join-Path -Path $documentsPath -ChildPath $moduleRootName
+        return Join-Path -Path $documentsModuleRoot -ChildPath 'Modules'
+    }
+
+    $homePath = $HOME
+    if ([string]::IsNullOrWhiteSpace($homePath)) {
+        throw "Unable to resolve the CurrentUser module path because neither MyDocuments nor HOME are defined."
+    }
+
+    if ($IsWindows) {
+        $moduleRootName = if ($IsCoreCLR) { 'PowerShell' } else { 'WindowsPowerShell' }
+        return [System.IO.Path]::Combine($homePath, 'Documents', $moduleRootName, 'Modules')
+    }
+
+    return [System.IO.Path]::Combine($homePath, '.local', 'share', 'powershell', 'Modules')
+}
+
 function Test-IsExcludedAnalyzerPath {
     param(
         [Parameter(Mandatory)]
@@ -170,16 +203,21 @@ foreach ($module in $requiredModules) {
 
 #region 4. Normalize PSModulePath
 Write-Step "`nStep 4: Normalizing PSModulePath..."
-$currentUserPath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'WindowsPowerShell\Modules'
-if ($IsCoreCLR) {
-    $currentUserPath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'PowerShell\Modules'
+$currentUserPath = Get-CurrentUserModulePath
+Write-Verbose "Resolved CurrentUser module path: $currentUserPath"
+
+$modulePaths = @()
+if (-not [string]::IsNullOrWhiteSpace($env:PSModulePath)) {
+    $modulePaths = $env:PSModulePath -split [System.IO.Path]::PathSeparator
 }
 
-$modulePaths = $env:PSModulePath -split [System.IO.Path]::PathSeparator
-if (-not $modulePaths -or $modulePaths[0] -ne $currentUserPath) {
+$modulePaths = $modulePaths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+if ($modulePaths.Count -eq 0 -or $modulePaths[0] -ne $currentUserPath) {
     Write-Verbose "CurrentUser module path is not prioritized. Adjusting..."
-    $dedupedPaths = $modulePaths | Where-Object { $_ -and $_ -ne $currentUserPath }
-    $env:PSModulePath = ($currentUserPath, $dedupedPaths) -join [System.IO.Path]::PathSeparator
+    $dedupedPaths = $modulePaths | Where-Object { $_ -ne $currentUserPath }
+    $normalizedPaths = @($currentUserPath) + $dedupedPaths
+    $env:PSModulePath = $normalizedPaths -join [System.IO.Path]::PathSeparator
     Write-Step "[OK] PSModulePath normalized to prioritize CurrentUser."
 }
 else {
@@ -263,7 +301,7 @@ if (-not $Quiet) {
 #endregion
 
 #region 6. Exit Code
-$blockingFindings = $analyzerResults | Where-Object { $_.Severity -in @('Error', 'Warning') }
+$blockingFindings = @($analyzerResults | Where-Object { $_.Severity -in @('Error', 'Warning') })
 if ($blockingFindings.Count -gt 0) {
     Write-Error "`nPSScriptAnalyzer found blocking issues (warnings are treated as errors). Please review the report and fix them."
     exit 1
