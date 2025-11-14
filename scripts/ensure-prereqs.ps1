@@ -217,12 +217,19 @@ if ($analysisCount -eq 0) {
     $analyzerResults = @()
 }
 else {
-    try {
-        $analyzerResults = Invoke-ScriptAnalyzer -Path $analysisPaths -ErrorAction Stop
-    }
-    catch {
-        Write-Error "Invoke-ScriptAnalyzer failed. $_"
-        exit 1
+    $analyzerResults = @()
+    foreach ($analysisPath in $analysisPaths) {
+        try {
+            # Invoke-ScriptAnalyzer 1.21.0 expects a single string for -Path, so run once per path and collect the results.
+            $pathResults = Invoke-ScriptAnalyzer -Path $analysisPath -ErrorAction Stop
+            if ($pathResults) {
+                $analyzerResults += $pathResults
+            }
+        }
+        catch {
+            Write-Error "Invoke-ScriptAnalyzer failed for '$analysisPath'. $_"
+            exit 1
+        }
     }
 }
 
