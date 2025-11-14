@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Dedicated PowerShell installer tailored for Codex's Ubuntu 24.04 base image.
-# - Detects the architecture Codex provisions (amd64 today, arm64 future)
+# - Installs PowerShell for the architecture Codex provisions (amd64 today, arm64 future)
 # - Adds Microsoft's package feed only when needed
 # - Pins to PowerShell 7.4+ and validates availability post-install
 # - Designed to run idempotently inside Codex `setup` snippets

@@ -79,7 +79,7 @@ ensure_powershell() {
     $sudo_cmd apt-get update -y
     $sudo_cmd apt-get install -y wget apt-transport-https software-properties-common gnupg
     local tmp_deb=/tmp/packages-microsoft-prod.deb
-    wget -q -O "${tmp_deb}" "https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb"
+    wget -q -O "${tmp_deb}" "https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb"
     $sudo_cmd dpkg -i "${tmp_deb}"
     rm -f "${tmp_deb}"
     $sudo_cmd apt-get update -y
