@@ -8,6 +8,8 @@
 - Added strict mode, #requires metadata, and Quiet-aware informational logging that avoids `Write-Host`.
 - Normalized PSModulePath handling and converted required module detection to `Get-InstalledPSResource` for accuracy.
 - Made PSScriptAnalyzer warnings fail the run, exported analyzer output to `examples/prereq_report.json`, and refreshed the CHANGELOG/todo backlog.
+- Replaced `Invoke-ScriptAnalyzer -Recurse` with explicit file enumeration that skips generated folders to avoid null-reference crashes.
+- Passed a strongly typed string-path array into `Invoke-ScriptAnalyzer` to prevent `System.Object[]` parameter-binding errors on Windows hosts.
 
 ## Validation & Follow-ups
 - Static review only (workspace is read-only). Next operator should run:

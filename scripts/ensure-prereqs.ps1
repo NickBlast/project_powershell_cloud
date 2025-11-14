@@ -61,6 +61,7 @@ $requiredModules = @(
 $repoRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..')).Path
 $examplesDir = Join-Path -Path $repoRoot -ChildPath 'examples'
 $reportPath = Join-Path -Path $examplesDir -ChildPath 'prereq_report.json'
+$excludedAnalyzerDirectories = @('.git', '.archive', 'examples', 'logs', 'outputs', 'reports')
 
 function Write-Step {
     param(
@@ -70,6 +71,27 @@ function Write-Step {
 
     Write-Information $Message
     Write-Verbose $Message
+}
+#endregion
+
+#region Helper Functions
+function Test-IsExcludedAnalyzerPath {
+    param(
+        [Parameter(Mandatory)]
+        [string]$FullPath
+    )
+
+    $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $FullPath)
+    if (-not $relativePath -or $relativePath -eq '.' -or $relativePath.StartsWith('..')) {
+        return $false
+    }
+
+    $relativeSegments = $relativePath -split '[\\/]' | Where-Object { $_ }
+    if (-not $relativeSegments) {
+        return $false
+    }
+
+    return $relativeSegments[0] -in $excludedAnalyzerDirectories
 }
 #endregion
 
@@ -174,7 +196,28 @@ if (-not (Test-Path -Path $examplesDir)) {
     }
 }
 
-$analyzerResults = Invoke-ScriptAnalyzer -Path $repoRoot -Recurse
+$analysisTargets = @(Get-ChildItem -Path $repoRoot -Recurse -File -ErrorAction Stop |
+    Where-Object { $_.Extension -in '.ps1', '.psm1', '.psd1', '.ps1xml' } |
+    Where-Object { -not (Test-IsExcludedAnalyzerPath -FullPath $_.FullName) })
+$analysisPaths = New-Object System.Collections.Generic.List[string]
+foreach ($analysisTarget in $analysisTargets) {
+    [void]$analysisPaths.Add($analysisTarget.FullName)
+}
+
+if ($analysisPaths.Count -eq 0) {
+    Write-Step "No PowerShell files found for analysis. Skipping Invoke-ScriptAnalyzer."
+    $analyzerResults = @()
+}
+else {
+    try {
+        $analyzerResults = Invoke-ScriptAnalyzer -Path $analysisPaths.ToArray() -ErrorAction Stop
+    }
+    catch {
+        Write-Error "Invoke-ScriptAnalyzer failed. $_"
+        exit 1
+    }
+}
+
 if ($PSCmdlet.ShouldProcess($reportPath, 'Generate PSScriptAnalyzer Report')) {
     $analyzerResults | ConvertTo-Json -Depth 6 | Out-File -FilePath $reportPath -Encoding utf8
     Write-Step "[OK] PSScriptAnalyzer report saved to: $reportPath"
@@ -186,6 +229,7 @@ if (-not $Quiet) {
     $info = @($analyzerResults | Where-Object { $_.Severity -eq 'Information' })
 
     Write-Information "`n[PSScriptAnalyzer Summary]"
+    Write-Information "  Files analyzed: $($analysisPaths.Count)"
     Write-Information "  Total Issues: $($analyzerResults.Count)"
     Write-Information "  - Errors: $($errors.Count)"
     Write-Information "  - Warnings: $($warnings.Count)"
