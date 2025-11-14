@@ -196,21 +196,29 @@ if (-not (Test-Path -Path $examplesDir)) {
     }
 }
 
-$analysisTargets = @(Get-ChildItem -Path $repoRoot -Recurse -File -ErrorAction Stop |
-    Where-Object { $_.Extension -in '.ps1', '.psm1', '.psd1', '.ps1xml' } |
-    Where-Object { -not (Test-IsExcludedAnalyzerPath -FullPath $_.FullName) })
-$analysisPaths = New-Object System.Collections.Generic.List[string]
-foreach ($analysisTarget in $analysisTargets) {
-    [void]$analysisPaths.Add($analysisTarget.FullName)
+
+try {
+    $analysisTargets = Get-ChildItem -Path $repoRoot -Recurse -File -ErrorAction Stop
+}
+catch {
+    Write-Error "Failed to enumerate files for ScriptAnalyzer. $_"
+    exit 1
 }
 
-if ($analysisPaths.Count -eq 0) {
+[string[]]$analysisPaths = $analysisTargets |
+    Where-Object { $_.Extension -in '.ps1', '.psm1', '.psd1', '.ps1xml' } |
+    Where-Object { -not (Test-IsExcludedAnalyzerPath -FullPath $_.FullName) } |
+    Select-Object -ExpandProperty FullName
+
+$analysisCount = if ($analysisPaths) { $analysisPaths.Count } else { 0 }
+
+if ($analysisCount -eq 0) {
     Write-Step "No PowerShell files found for analysis. Skipping Invoke-ScriptAnalyzer."
     $analyzerResults = @()
 }
 else {
     try {
-        $analyzerResults = Invoke-ScriptAnalyzer -Path $analysisPaths.ToArray() -ErrorAction Stop
+        $analyzerResults = Invoke-ScriptAnalyzer -Path $analysisPaths -ErrorAction Stop
     }
     catch {
         Write-Error "Invoke-ScriptAnalyzer failed. $_"
