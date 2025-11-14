@@ -213,9 +213,9 @@ if (-not [string]::IsNullOrWhiteSpace($env:PSModulePath)) {
 
 $modulePaths = $modulePaths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 
-if (-not $modulePaths -or $modulePaths[0] -ne $currentUserPath) {
+if ($modulePaths.Count -eq 0 -or $modulePaths[0] -ne $currentUserPath) {
     Write-Verbose "CurrentUser module path is not prioritized. Adjusting..."
-    $dedupedPaths = $modulePaths | Where-Object { $_ -and $_ -ne $currentUserPath }
+    $dedupedPaths = $modulePaths | Where-Object { $_ -ne $currentUserPath }
     $normalizedPaths = @($currentUserPath) + $dedupedPaths
     $env:PSModulePath = $normalizedPaths -join [System.IO.Path]::PathSeparator
     Write-Step "[OK] PSModulePath normalized to prioritize CurrentUser."
