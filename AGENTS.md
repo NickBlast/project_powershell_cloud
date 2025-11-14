@@ -8,7 +8,7 @@ This file is the single source of truth for every assistant (Codex, Gemini, Clin
 - Source-of-record docs: `docs/reference/repo_contract.md`, `docs/reference/powershell_repo_design.md`, `docs/reference/powershell_standards.md`, `docs/reference/powershell_sources_of_record.md`, `docs/reference/help_authoring.md`, `docs/reference/psscriptanalyzer_ruleset.md`.
 
 ## 2. Project Structure & Key Paths
-- `modules/` — reusable logic (`connect/`, `export/`, `logging/`); keep normalization, schema enforcement, and logging here.
+- `modules/` — reusable logic (`entra_connection/`, `export/`, `logging/`); keep normalization, schema enforcement, and logging here.
 - `scripts/` — thin CLI entry points such as `scripts/export-*.ps1` and `scripts/ensure-prereqs.ps1`.
 - `docs/` — reference docs, schemas (`docs/schemas/`), compliance mappings, prompt banks.
 - `audit_notes/` — per-wave evidence; log artifacts after each wave/micro-PR.

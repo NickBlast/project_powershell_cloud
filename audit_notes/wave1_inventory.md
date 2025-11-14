@@ -19,7 +19,7 @@
 
 ## Modules
 
-- modules/connect/Connect.psm1
+- modules/entra_connection/entra_connection.psm1
 - modules/export/Export.psm1
 - modules/logging/Logging.psm1
 
@@ -54,4 +54,3 @@ These are excluded from any remediation; they will be ignored in Wave 2 fixes as
 - Fill Module and LearnURL columns in the Command Appendix using Microsoft Learn pages (prioritized per source rules).
 - Verify any deprecated or misspelled cmdlets; propose replacements where needed.
 - Confirm required modules in README and ensure `scripts/ensure-prereqs.ps1` pins minimum versions via PSResourceGet.
-

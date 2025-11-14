@@ -50,13 +50,14 @@ $psResourceModuleName = 'Microsoft.PowerShell.PSResourceGet'
 $psResourceModuleVersion = [Version]'1.0.5'
 
 $requiredModules = @(
-    @{ Name = 'Az.Accounts'; Version = '2.12.1' }
-    @{ Name = 'Az.Resources'; Version = '6.6.0' }
-    @{ Name = 'ImportExcel'; Version = '7.8.5' }
-    @{ Name = 'PSScriptAnalyzer'; Version = '1.21.0' }
-    @{ Name = 'Pester'; Version = '5.5.0' }
-    @{ Name = 'Microsoft.PowerShell.SecretManagement'; Version = '1.1.2' }
-    @{ Name = 'Microsoft.Graph'; Version = '2.9.0' }
+    @{ Name = 'Az.Accounts'; MinimumVersion = '2.12.1' }
+    @{ Name = 'Az.Resources'; MinimumVersion = '6.6.0' }
+    @{ Name = 'ImportExcel'; MinimumVersion = '7.8.5' }
+    @{ Name = 'PSScriptAnalyzer'; MinimumVersion = '1.21.0' }
+    @{ Name = 'Pester'; MinimumVersion = '5.5.0' }
+    @{ Name = 'Microsoft.PowerShell.SecretManagement'; MinimumVersion = '1.1.2' }
+    @{ Name = 'Microsoft.Graph'; MinimumVersion = '2.9.0' }
+    @{ Name = 'Microsoft.Graph.Entra'; MinimumVersion = '2.9.0' }
 )
 
 $repoRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..')).Path
@@ -176,32 +177,32 @@ catch {
 Write-Step "`nStep 3: Installing/updating required modules..."
 foreach ($module in $requiredModules) {
     $moduleName = $module.Name
-    $requiredVersion = [Version]$module.Version
-    Write-Verbose "Checking module: $moduleName (required version: $requiredVersion)"
+    $minimumVersion = [Version]$module.MinimumVersion
+    Write-Verbose "Checking module: $moduleName (minimum version: $minimumVersion)"
 
     $installedModule = Get-InstalledPSResource -Name $moduleName -ErrorAction SilentlyContinue |
         Sort-Object -Property Version -Descending |
         Select-Object -First 1
 
-    if ($installedModule -and [Version]$installedModule.Version -eq $requiredVersion) {
-        Write-Step "  - $moduleName ($($installedModule.Version)) already installed."
+    if ($installedModule -and [Version]$installedModule.Version -ge $minimumVersion) {
+        Write-Step "  - $moduleName ($($installedModule.Version)) meets the minimum version requirement ($minimumVersion)."
         continue
     }
 
     $actionMessage = if ($installedModule) {
-        "Update $moduleName from $($installedModule.Version) to $requiredVersion"
+        "Update $moduleName from $($installedModule.Version) to at least $minimumVersion"
     }
     else {
-        "Install $moduleName version $requiredVersion"
+        "Install $moduleName version $minimumVersion"
     }
 
     if ($PSCmdlet.ShouldProcess($moduleName, $actionMessage)) {
         try {
-            Install-PSResource -Name $moduleName -Version $requiredVersion -Repository PSGallery -Scope CurrentUser -AcceptLicense -ErrorAction Stop | Out-Null
+            Install-PSResource -Name $moduleName -Version $module.MinimumVersion -Repository PSGallery -Scope CurrentUser -AcceptLicense -ErrorAction Stop | Out-Null
             Write-Step "  [OK] $actionMessage completed."
         }
         catch {
-            Write-Error "Failed to install $moduleName version $requiredVersion. $_"
+            Write-Error "Failed to install $moduleName version $($module.MinimumVersion). $_"
             exit 1
         }
     }

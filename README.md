@@ -35,7 +35,7 @@ The initial MVP focuses on Azure, with AWS exports supported where noted. See th
 Installed via `scripts/ensure-prereqs.ps1` (CurrentUser scope; minimum versions pinned):
 
 - Az.Accounts, Az.Resources
-- Microsoft.Graph (SDK)
+- Microsoft.Graph (SDK) and Microsoft.Graph.Entra
 - Microsoft.PowerShell.SecretManagement
 - PSScriptAnalyzer, Pester
 - ImportExcel (optional for XLSX)

@@ -55,7 +55,7 @@ All access must meet strict metadata requirements; this repo evaluates and enfor
 /modules
   /logging                # Structured logging + redaction
   /export                 # CSV/JSON/XLSX writers with schema validation
-  /connect                # Auth/context handling for clouds
+  /entra_connection       # Microsoft Entra + Azure auth/context helpers
 /scripts
   ensure-prereqs.ps1      # Idempotent environment bootstrap (Verb-Noun)
   export-*.ps1            # Top-level entrypoints by dataset (Verb-Noun)
@@ -105,7 +105,7 @@ README.md
 
 ## Connection Strategy (Multi-Tenant Friendly)
 
-- **Connect module**: Centralizes auth for Graph, Azure, AWS, and GCP.  
+- **Entra connection module:** Centralizes Microsoft Graph (Entra ID) and Azure Resource Manager auth; future AWS/GCP modules will mirror the same contract.  
 - **Auth modes:** device code for interactive; **preferred** service principals for automation with **read-only** scopes/roles.  
 - **Tenants file:** `.config/tenants.json` stores tenant IDs, clouds, labels, and preferred auth mode (non-secret).  
 - **Context reuse:** detect existing sessions; prompt reuse vs. reconnect.  
@@ -178,7 +178,7 @@ README.md
 
 ```mermaid
 flowchart LR
-  A[connect module] --> B[azure: scopes & rbac]
+  A[entra_connection module] --> B[azure: scopes & rbac]
   A --> C[entra: roles, groups, apps, sps]
   A --> D[aws (later)]
   A --> E[gcp (later)]
@@ -195,6 +195,7 @@ flowchart LR
 
 - **ImportExcel**  
 - **Microsoft.Graph** (select submodules only; avoid installing the full roll-up unless necessary)  
+- **Microsoft.Graph.Entra** (modern Entra ID cmdlets built on Microsoft Graph)  
 - **Az** (select submodules only; e.g., `Az.Accounts`, `Az.Resources`)  
 - **PSScriptAnalyzer**, **Pester**, **Microsoft.PowerShell.SecretManagement**
 

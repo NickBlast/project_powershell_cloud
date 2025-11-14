@@ -27,7 +27,6 @@ Packaging & Runtime
 
 Repository Conventions (recap)
 
-- Modules: `modules/connect`, `modules/export`, `modules/logging`.
+- Modules: `modules/entra_connection`, `modules/export`, `modules/logging`.
 - Scripts: `scripts/` entry points (support `-WhatIf` where relevant).
 - Schemas: `docs/schemas/`; runbooks: `docs/runbooks/`.
-

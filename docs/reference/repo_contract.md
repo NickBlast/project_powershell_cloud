@@ -36,7 +36,7 @@
 /modules
   /logging
   /export
-  /connect
+  /entra_connection
 /scripts
 /tests
 /examples
@@ -68,6 +68,7 @@ README.md
   5. Run ScriptAnalyzer over the repo and emit a machine-readable prereq report (`/examples/prereq_report.json`).
 - **Required modules (baseline, minimum versions pinned in `ensure-prereqs.ps1`):**
   - `Microsoft.Graph` (select submodules only)
+  - `Microsoft.Graph.Entra`
   - `Az.Accounts`, `Az.Resources` (select submodules only)
   - `ImportExcel`
   - `PSScriptAnalyzer`, `Pester`
@@ -199,7 +200,7 @@ When adding or modifying a dataset/export, include explicit AC like:
 
 ```mermaid
 flowchart LR
-  A[connect module] --> B[azure: scopes & rbac]
+  A[entra_connection module] --> B[azure: scopes & rbac]
   A --> C[entra: roles, groups, apps, sps]
   A --> D[aws (later)]
   A --> E[gcp (later)]

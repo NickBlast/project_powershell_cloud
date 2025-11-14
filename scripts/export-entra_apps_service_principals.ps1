@@ -20,7 +20,7 @@ $ErrorActionPreference = 'Stop'
 $VerbosePreference = $PSBoundParameters.Verbose.IsPresent ? 'Continue' : 'SilentlyContinue'
 
 # Import shared modules
-Import-Module $PSScriptRoot/../modules/connect/Connect.psm1
+Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psm1
 Import-Module $PSScriptRoot/../modules/logging/Logging.psm1
 Import-Module $PSScriptRoot/../modules/export/Export.psm1
 

@@ -1,7 +1,7 @@
 FilePath,SymbolType,Name,Module,LearnURL,KeyParameters,Notes
 # Microsoft Graph SDK
-modules/connect/Connect.psm1,Cmdlet,Connect-MgGraph,Microsoft.Graph.Authentication,https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.authentication/connect-mggraph,-TenantId; -Scopes,Auth to Graph
-modules/connect/Connect.psm1,Cmdlet,Get-MgContext,Microsoft.Graph.Authentication,https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.authentication/get-mgcontext,,Current Graph context
+modules/entra_connection/entra_connection.psm1,Cmdlet,Connect-MgGraph,Microsoft.Graph.Authentication,https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.authentication/connect-mggraph,-TenantId; -Scopes,Auth to Graph
+modules/entra_connection/entra_connection.psm1,Cmdlet,Get-MgContext,Microsoft.Graph.Authentication,https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.authentication/get-mgcontext,,Current Graph context
 scripts/export-entra_group_memberships.ps1,Cmdlet,Get-MgGroup,Microsoft.Graph.Groups,https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.groups/get-mggroup,-All,Enumerate groups
 scripts/export-entra_group_memberships.ps1,Cmdlet,Get-MgGroupMember,Microsoft.Graph.Groups,https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.groups/get-mggroupmember,-GroupId; -All,Enumerate group members
 scripts/export-entra_directory_roles.ps1,Cmdlet,Get-MgDirectoryRole,Microsoft.Graph.Identity.DirectoryManagement,https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrole,-All,Enumerate roles
@@ -13,8 +13,8 @@ scripts/export-entra_apps_service_principals.ps1,Cmdlet,Get-MgOauth2PermissionGr
 modules/logging/Logging.psm1,Cmdlet,Get-MgUser,Microsoft.Graph.Users,https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.users/get-mguser,-UserId,Example usage in docs
 
 # Azure PowerShell (Az)
-modules/connect/Connect.psm1,Cmdlet,Connect-AzAccount,Az.Accounts,https://learn.microsoft.com/en-us/powershell/module/az.accounts/connect-azaccount,-Tenant; -UseDeviceAuthentication| -ServicePrincipal,Azure auth
-modules/connect/Connect.psm1,Cmdlet,Get-AzContext,Az.Accounts,https://learn.microsoft.com/en-us/powershell/module/az.accounts/get-azcontext,,Active Azure context
+modules/entra_connection/entra_connection.psm1,Cmdlet,Connect-AzAccount,Az.Accounts,https://learn.microsoft.com/en-us/powershell/module/az.accounts/connect-azaccount,-Tenant; -UseDeviceAuthentication| -ServicePrincipal,Azure auth
+modules/entra_connection/entra_connection.psm1,Cmdlet,Get-AzContext,Az.Accounts,https://learn.microsoft.com/en-us/powershell/module/az.accounts/get-azcontext,,Active Azure context
 scripts/export-azure_scopes.ps1,Cmdlet,Get-AzManagementGroup,Az.Resources,https://learn.microsoft.com/en-us/powershell/module/az.resources/get-azmanagementgroup,,Management groups
 scripts/export-azure_scopes.ps1,Cmdlet,Get-AzSubscription,Az.Accounts,https://learn.microsoft.com/en-us/powershell/module/az.accounts/get-azsubscription,,Subscriptions
 scripts/export-azure_scopes.ps1,Cmdlet,Set-AzContext,Az.Accounts,https://learn.microsoft.com/en-us/powershell/module/az.accounts/set-azcontext,-Subscription,Switch subscription
@@ -23,7 +23,7 @@ scripts/export-azure_rbac_assignments.ps1,Cmdlet,Get-AzRoleAssignment,Az.Resourc
 scripts/export-azure_rbac_definitions.ps1,Cmdlet,Get-AzRoleDefinition,Az.Resources,https://learn.microsoft.com/en-us/powershell/module/az.resources/get-azroledefinition,,RBAC role definitions
 
 # Secrets & Packaging
-modules/connect/Connect.psm1,Cmdlet,Get-Secret,Microsoft.PowerShell.SecretManagement,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.secretmanagement/get-secret,,Retrieve client secret
+modules/entra_connection/entra_connection.psm1,Cmdlet,Get-Secret,Microsoft.PowerShell.SecretManagement,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.secretmanagement/get-secret,,Retrieve client secret
 scripts/ensure-prereqs.ps1,Cmdlet,Install-Module,PowerShellGet,https://learn.microsoft.com/en-us/powershell/module/powershellget/install-module,,Bootstrap PSResourceGet if missing
 scripts/ensure-prereqs.ps1,Cmdlet,Install-PSResource,PSResourceGet,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.psresourceget/install-psresource,-Name; -MinimumVersion; -Scope,Install modules
 scripts/ensure-prereqs.ps1,Cmdlet,Invoke-ScriptAnalyzer,PSScriptAnalyzer,https://learn.microsoft.com/en-us/powershell/module/psscriptanalyzer/invoke-scriptanalyzer,-Path; -Recurse,Static analysis
@@ -35,13 +35,13 @@ modules/export/Export.psm1,Cmdlet,ConvertTo-Json,Microsoft.PowerShell.Utility,ht
 modules/export/Export.psm1,Cmdlet,ConvertFrom-Json,Microsoft.PowerShell.Utility,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/convertfrom-json,,Deserialization
 modules/export/Export.psm1,Cmdlet,Out-File,Microsoft.PowerShell.Utility,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/out-file,,Write file
 modules/export/Export.psm1,Cmdlet,Add-Member,Microsoft.PowerShell.Utility,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/add-member,,Add properties
-modules/connect/Connect.psm1,Cmdlet,Get-Content,Microsoft.PowerShell.Management,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-content,,Read file
-modules/connect/Connect.psm1,Cmdlet,Test-Path,Microsoft.PowerShell.Management,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/test-path,,Path check
+modules/entra_connection/entra_connection.psm1,Cmdlet,Get-Content,Microsoft.PowerShell.Management,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-content,,Read file
+modules/entra_connection/entra_connection.psm1,Cmdlet,Test-Path,Microsoft.PowerShell.Management,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/test-path,,Path check
 modules/export/Export.psm1,Cmdlet,New-Item,Microsoft.PowerShell.Management,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/new-item,,Create directory
-modules/connect/Connect.psm1,Cmdlet,Join-Path,Microsoft.PowerShell.Management,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/join-path,,Path join
-modules/connect/Connect.psm1,Cmdlet,Resolve-Path,Microsoft.PowerShell.Management,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/resolve-path,,Resolve path
-modules/connect/Connect.psm1,Cmdlet,Select-Object,Microsoft.PowerShell.Utility,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/select-object,,Select fields
-modules/connect/Connect.psm1,Cmdlet,Where-Object,Microsoft.PowerShell.Core,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/where-object,,Filter
+modules/entra_connection/entra_connection.psm1,Cmdlet,Join-Path,Microsoft.PowerShell.Management,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/join-path,,Path join
+modules/entra_connection/entra_connection.psm1,Cmdlet,Resolve-Path,Microsoft.PowerShell.Management,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/resolve-path,,Resolve path
+modules/entra_connection/entra_connection.psm1,Cmdlet,Select-Object,Microsoft.PowerShell.Utility,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/select-object,,Select fields
+modules/entra_connection/entra_connection.psm1,Cmdlet,Where-Object,Microsoft.PowerShell.Core,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/where-object,,Filter
 modules/logging/Logging.psm1,Cmdlet,Start-Sleep,Microsoft.PowerShell.Utility,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/start-sleep,,Backoff delay
 modules/logging/Logging.psm1,Cmdlet,Write-Host,Microsoft.PowerShell.Utility,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/write-host,,Console output
 modules/export/Export.psm1,Cmdlet,Write-Warning,Microsoft.PowerShell.Utility,https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/write-warning,,Warn

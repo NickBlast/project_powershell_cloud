@@ -6,7 +6,7 @@ A full review of the repository's scripts and modules was conducted to ensure co
 
 ### 1. Function Naming (`Verb-Noun`)
 
-All exported functions in the `connect`, `export`, and `logging` modules were checked against the list of approved PowerShell verbs. 
+All exported functions in the `entra_connection`, `export`, and `logging` modules were checked against the list of approved PowerShell verbs. 
 
 **Result:** All public function names are already compliant with the `Verb-Noun` standard. No renames were necessary.
 
@@ -16,7 +16,7 @@ The following conventions were checked:
 - **Function Parameters:** Must use `PascalCase`.
 - **Local Variables:** Must use `lowerCamelCase`.
 
-**Result:** All functions in all modules (`Connect.psm1`, `Export.psm1`, `Logging.psm1`) were found to be fully compliant with the variable naming standards. No variable renames were necessary.
+**Result:** All functions in all modules (`entra_connection.psm1`, `Export.psm1`, `Logging.psm1`) were found to be fully compliant with the variable naming standards. No variable renames were necessary.
 
 ## Old-to-New Mapping Table
 

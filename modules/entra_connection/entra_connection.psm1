@@ -1,5 +1,5 @@
 #
-# PowerShell Connection Module for Azure and Microsoft Graph
+# Microsoft Entra connection helpers for Azure Resource Manager and Microsoft Graph
 #
 
 #region Public Functions
@@ -25,19 +25,19 @@ function Get-TenantCatalog {
     $configDir = Join-Path -Path $PSScriptRoot -ChildPath '..'
     $configDir = Join-Path -Path $configDir -ChildPath '..'
     $configDir = Join-Path -Path $configDir -ChildPath '.config'
-    $configPath = Join-Path -Path $configDir -ChildPath 'tenants.json'
-    $configPath = Resolve-Path -Path $configPath -ErrorAction SilentlyContinue
+    $catalogPath = Join-Path -Path $configDir -ChildPath 'tenants.json'
 
-    if (-not (Test-Path -Path $configPath)) {
-        Write-Warning "Tenant catalog file not found at: $configPath"
+    if (-not (Test-Path -Path $catalogPath -PathType Leaf)) {
+        Write-Warning "Tenant catalog file not found at: $catalogPath"
         return @()
     }
 
     try {
-        return Get-Content -Path $configPath -Raw | ConvertFrom-Json
+        $catalogContent = Get-Content -Path $catalogPath -Raw -ErrorAction Stop
+        return $catalogContent | ConvertFrom-Json -ErrorAction Stop
     }
     catch {
-        Write-Error "Failed to read or parse tenant catalog '$configPath'. Error: $_"
+        Write-Error "Failed to read or parse tenant catalog '$catalogPath'. Error: $_"
         return @()
     }
 }
@@ -101,8 +101,9 @@ function Select-Tenant {
 .SYNOPSIS
     Connects to Microsoft Graph with a specific context.
 .DESCRIPTION
-    Handles authentication to Microsoft Graph using either an interactive device code flow or a non-interactive
-    service principal flow. For service principals, credentials should be stored in a SecretManagement vault.
+    Handles authentication to Microsoft Graph (Microsoft Entra ID) using either an interactive device code flow or a
+    non-interactive service principal flow. For service principals, credentials should be stored in a SecretManagement
+    vault and granted application permissions per Microsoft guidance.
 .PARAMETER TenantId
     The ID of the tenant to connect to.
 .PARAMETER AuthMode
@@ -120,8 +121,11 @@ function Select-Tenant {
 .OUTPUTS
     None
 .NOTES
-    This function will call Connect-MgGraph. For ServicePrincipal auth, secrets are retrieved via SecretManagement;
-    ensure your vault and permissions are configured. The function does not persist secrets to disk.
+    This function calls Connect-MgGraph with Process-scoped contexts so tokens are not cached on disk. Device code
+    mode requests the following delegated read-only scopes: Directory.Read.All, Group.Read.All, Application.Read.All,
+    Policy.Read.All, and RoleManagement.Read.Directory. Service principals must be granted the equivalent application
+    permissions before invoking this helper. Secrets are retrieved via SecretManagement; ensure your vault and
+    permissions are configured. The function does not persist secrets to disk.
 #>
 function Connect-GraphContext {
     [CmdletBinding()]
@@ -150,17 +154,23 @@ function Connect-GraphContext {
 
     switch ($AuthMode) {
         'DeviceCode' {
-            Connect-MgGraph -TenantId $TenantId -Scopes $scopes
+            Connect-MgGraph -TenantId $TenantId -Scopes $scopes -NoWelcome -ContextScope Process | Out-Null
         }
         'ServicePrincipal' {
             if (-not ($ClientId -and $VaultName -and $SecretName)) {
                 throw "For ServicePrincipal auth, -ClientId, -VaultName, and -SecretName are required."
             }
-            $clientSecret = Get-Secret -Vault $VaultName -Name $SecretName -AsPlainText
+            try {
+                $clientSecret = Get-Secret -Vault $VaultName -Name $SecretName -AsPlainText -ErrorAction Stop
+            }
+            catch {
+                throw "Failed to retrieve secret '$SecretName' from vault '$VaultName'. $_"
+            }
+
             if (-not $clientSecret) {
                 throw "Failed to retrieve secret '$SecretName' from vault '$VaultName'."
             }
-            Connect-MgGraph -TenantId $TenantId -ClientId $ClientId -ClientSecret $clientSecret
+            Connect-MgGraph -TenantId $TenantId -ClientId $ClientId -ClientSecret $clientSecret -NoWelcome -ContextScope Process | Out-Null
         }
     }
 }
@@ -169,7 +179,8 @@ function Connect-GraphContext {
 .SYNOPSIS
     Connects to Azure (ARM) with a specific context.
 .DESCRIPTION
-    Handles authentication to Azure Resource Manager using either device code or service principal flow.
+    Handles authentication to Azure Resource Manager using either device code or service principal flow based on the
+    Connect-AzAccount guidance published by Microsoft. Contexts are scoped to the current process to avoid caching.
 .PARAMETER TenantId
     The ID of the tenant to connect to.
 .PARAMETER AuthMode
@@ -185,8 +196,9 @@ function Connect-GraphContext {
 .OUTPUTS
     None
 .NOTES
-    For ServicePrincipal authentication the function will retrieve secrets using SecretManagement and create
-    a PSCredential; ensure the vault returns a SecureString secret.
+    For ServicePrincipal authentication the function retrieves secrets using SecretManagement and creates a
+    PSCredential from the stored SecureString. Device code prompts mirror the documented Connect-AzAccount
+    device flow experience. The helper disables Az context autosave for the process so connections are ephemeral.
 #>
 function Connect-AzureContext {
     [CmdletBinding()]
@@ -204,15 +216,32 @@ function Connect-AzureContext {
         [string]$SecretName
     )
 
+    try {
+        Disable-AzContextAutosave -Scope Process -ErrorAction Stop | Out-Null
+    }
+    catch {
+        Write-Warning "Unable to disable Az context autosave for this process. $_"
+    }
+
     switch ($AuthMode) {
         'DeviceCode' {
-            Connect-AzAccount -Tenant $TenantId -UseDeviceAuthentication
+            Connect-AzAccount -Tenant $TenantId -UseDeviceAuthentication | Out-Null
         }
         'ServicePrincipal' {
             if (-not ($ClientId -and $VaultName -and $SecretName)) {
                 throw "For ServicePrincipal auth, -ClientId, -VaultName, and -SecretName are required."
             }
-            $clientSecret = Get-Secret -Vault $VaultName -Name $SecretName
+            try {
+                $clientSecret = Get-Secret -Vault $VaultName -Name $SecretName -ErrorAction Stop
+            }
+            catch {
+                throw "Failed to retrieve secret '$SecretName' from vault '$VaultName'. $_"
+            }
+
+            if (-not $clientSecret) {
+                throw "Failed to retrieve secret '$SecretName' from vault '$VaultName'."
+            }
+
             $credential = New-Object System.Management.Automation.PSCredential($ClientId, $clientSecret)
             Connect-AzAccount -Tenant $TenantId -ServicePrincipal -Credential $credential | Out-Null
         }

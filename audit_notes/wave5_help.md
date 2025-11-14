@@ -8,7 +8,7 @@ A full review of the repository's modules was conducted to ensure all exported f
 
 Help documentation was added or corrected for nearly every function across all three modules. The primary changes involved adding missing `.OUTPUTS` and `.NOTES` sections to provide better clarity on what each function returns and its intended use. Several typos in examples and descriptions were also corrected.
 
-**`modules/connect/Connect.psm1`**
+**`modules/entra_connection/entra_connection.psm1`**
 - **`Select-Tenant`**: Added `.OUTPUTS` section.
 - **`Connect-GraphContext`**: Added `.OUTPUTS` section.
 - **`Connect-AzureContext`**: Added `.OUTPUTS` section.
