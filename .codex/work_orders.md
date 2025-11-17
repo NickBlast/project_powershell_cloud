@@ -123,7 +123,7 @@ Implement a centralized logging pattern across all entrypoint scripts such that 
 
 - Do not alter the functional behavior of exports beyond adding logging.
 - Avoid adding heavy external dependencies for logging; use built-in PowerShell capabilities.
-- Maintain compatibility with PowerShell seven or later.
+- Maintain compatibility with PowerShell 7 or later.
 
 ### Expected Outcomes (Pull Request)
 
