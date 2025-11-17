@@ -348,7 +348,7 @@ Use this file as the single backlog. Keep entries actionable and remove them as 
 - **Area**
   - `LOGGING`        – Run logs, diagnostics, and observability.
   - `EXPORTS`        – Export scripts and output behavior.
-  - `MODULES`        – Shared modules (for example connection, helpers).
+  - `MODULES`        – Shared modules (e.g., connection, helpers).
   - `DOCS`           – README, runbooks, and reference docs.
   - `SCHEMA-FUTURE`  – Schema and validation work deferred to a later phase.
 
