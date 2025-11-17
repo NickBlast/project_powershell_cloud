@@ -2,7 +2,7 @@
 
 > **Purpose and audience:**  
 > This file provides instructions and context specifically for GitHub Copilot agents and automated workflows.  
-> The canonical unified runbook for this repository is maintained in [`AGENTS.md`](../../AGENTS.md).  
+> The canonical unified runbook for this repository is maintained in [`AGENTS.md`](../../AGENTS.md).
 > Some content may be duplicated here for agent context, but `AGENTS.md` is authoritative for project overview, structure, PowerShell standards, testing, and coding guidelines.  
 
 ## 1. Project overview
@@ -114,7 +114,7 @@ When Copilot suggests changes or reviews code, keep in mind:
 
 - **Current phase** requires all outputs to be validated against the appropriate schema files.
 - **Schema validation is active and mandatory**:
-  - All exports (JSON/CSV) must be validated against `docs/schemas/<dataset>.schema.json` before writing, as required by [`AGENTS.md`](../AGENTS.md) and [`ai_project_rules.md`](../ai_project_rules.md).
+  - All exports (JSON/CSV) must be validated against `docs/schemas/<dataset>.schema.json` before writing, as required by [`AGENTS.md`](../../AGENTS.md) and [`ai_project_rules.md`](../../ai_project_rules.md).
   - Schema enforcement is required for all dataset outputs; do not bypass or remove schema validation logic.
   - `dataset_version` metadata must be maintained to support schema versioning and future changes.
 
@@ -158,7 +158,7 @@ When Copilot is reviewing changes in this repository, focus comments on:
 
 4. **Scope alignment**
    - Does the change match an existing work order or documented requirement?
-   - Does it respect the current “raw export, schema later” strategy?
+   - Does it respect the current schema validation requirements and documented workflows?
 
 Avoid nitpicks that don’t materially affect correctness, readability, or alignment with project rules.
 
@@ -172,4 +172,4 @@ Avoid nitpicks that don’t materially affect correctness, readability, or align
   - AI project rules,
   - Or an active work order,
 
-then highlight the conflict in review comments and suggest the smallest change that keeps the repository consistent and safe for a banking IAM environment.
+then highlight the conflict in review comments and suggest the smallest change that keeps the repository consistent and safe for deterministic, auditable exports.
