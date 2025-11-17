@@ -3,10 +3,12 @@
 ## [Unreleased] - 2025-11-13
 ### Added
 - Added `tests/entra_connection.Tests.ps1` to smoke-test module import, SecretManagement error handling, and the `ensure-prereqs.ps1` + `Connect-GraphContext` workflow without touching live tenants.
+- Added `Connect-EntraTenant` as the primary orchestrator along with `scripts/smoke-test-entra.ps1` so operators can dry-run tenant connectivity before enabling live logins.
 
 ### Changed
 - Renamed the tenant connection module to `modules/entra_connection/entra_connection.psm1`, refreshed its Microsoft Entra documentation, and updated every script/doc import along with SecretManagement/Connect-* patterns that follow current Microsoft guidance.
 - Updated `scripts/ensure-prereqs.ps1`, README, and contract docs to treat module versions as minimums, ensure Microsoft.Graph.Entra is installed, and avoid downgrading newer Az/Graph bits.
+- Bumped module minimum versions (Az, Graph, Pester, SecretManagement, ImportExcel) and shifted PSResourceGet installs to request version ranges rather than pinning exact builds.
 
 ### Fixed
 - Hardened `scripts/ensure-prereqs.ps1` to pin PSResourceGet/PSGallery module versions, respect Quiet/WhatIf, normalize PSModulePath, and fail when PSScriptAnalyzer warnings or errors are detected.

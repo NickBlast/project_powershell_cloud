@@ -288,6 +288,207 @@ function Get-ActiveContext {
     return $contexts
 }
 
+<#
+.SYNOPSIS
+    Establishes Microsoft Entra ID (Microsoft Graph) and Azure Resource Manager connections for a tenant.
+.DESCRIPTION
+    Connects to Microsoft Graph and, optionally, Azure Resource Manager for the selected tenant using
+    modern Microsoft guidance. The function first resolves the tenant from the catalog, then invokes
+    Connect-GraphContext and Connect-AzureContext with strict error handling. Failures are captured and
+    returned as part of a structured result instead of throwing terminating errors so operators can
+    inspect and remediate issues without losing state.
+
+    Graph authentication supports delegated (DeviceCode) and application (ServicePrincipal) flows.
+    Device code connections request the delegated scopes Directory.Read.All, Group.Read.All,
+    Application.Read.All, Policy.Read.All, and RoleManagement.Read.Directory. Service principals must
+    be granted the equivalent application permissions via Microsoft Graph PowerShell SDK guidance.
+
+    Azure authentication uses Connect-AzAccount with either device code or service principal flows.
+    Service principals must have the appropriate Azure RBAC role assignments for the target tenant.
+
+.PARAMETER TenantId
+    The GUID of the tenant to connect to. Either TenantId or Label must be supplied when the catalog
+    contains multiple tenants.
+.PARAMETER Label
+    The friendly tenant label defined in ./.config/tenants.json. Either TenantId or Label must be
+    provided when more than one tenant exists.
+.PARAMETER GraphAuthMode
+    The authentication mode for Microsoft Graph. Defaults to DeviceCode.
+.PARAMETER AzureAuthMode
+    The authentication mode for Azure Resource Manager. Defaults to DeviceCode. Use -SkipAzure when an
+    Azure connection is not required.
+.PARAMETER GraphClientId
+    Application (client) ID for Microsoft Graph service principal authentication.
+.PARAMETER GraphVaultName
+    SecretManagement vault that stores the Microsoft Graph client secret.
+.PARAMETER GraphSecretName
+    SecretManagement secret name for the Microsoft Graph client secret.
+.PARAMETER AzureClientId
+    Application (client) ID for Azure service principal authentication. Defaults to GraphClientId when
+    not explicitly provided.
+.PARAMETER AzureVaultName
+    SecretManagement vault for Azure service principal credentials. Defaults to GraphVaultName when not
+    explicitly provided.
+.PARAMETER AzureSecretName
+    SecretManagement secret name for Azure service principal credentials. Defaults to GraphSecretName
+    when not explicitly provided.
+.PARAMETER SkipAzure
+    Skips the Azure Resource Manager connection flow while still returning the resolved tenant and
+    Microsoft Graph connection status.
+.EXAMPLE
+    PS> Connect-EntraTenant -Label 'production' -GraphAuthMode DeviceCode -AzureAuthMode DeviceCode
+    Prompts the operator for device-code authentication to Graph and Azure for the tenant labeled
+    "production".
+.EXAMPLE
+    PS> Connect-EntraTenant -TenantId $tenantId -GraphAuthMode ServicePrincipal -GraphClientId $clientId `
+            -GraphVaultName 'CorpVault' -GraphSecretName 'GraphAppSecret' -SkipAzure
+    Establishes an application-context connection to Microsoft Graph for the specified tenant and skips
+    Azure authentication.
+.OUTPUTS
+    [pscustomobject]
+.NOTES
+    Required Microsoft Graph scopes: Directory.Read.All, Group.Read.All, Application.Read.All,
+    Policy.Read.All, RoleManagement.Read.Directory.
+    Required Azure permissions: Reader or higher on the target subscriptions/resource groups unless the
+    calling automation requires elevated rights.
+#>
+function Connect-EntraTenant {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string]$TenantId,
+        [Parameter(Mandatory = $false)]
+        [string]$Label,
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('DeviceCode', 'ServicePrincipal')]
+        [string]$GraphAuthMode = 'DeviceCode',
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('DeviceCode', 'ServicePrincipal')]
+        [string]$AzureAuthMode = 'DeviceCode',
+        [Parameter(Mandatory = $false)]
+        [string]$GraphClientId,
+        [Parameter(Mandatory = $false)]
+        [string]$GraphVaultName,
+        [Parameter(Mandatory = $false)]
+        [string]$GraphSecretName,
+        [Parameter(Mandatory = $false)]
+        [string]$AzureClientId,
+        [Parameter(Mandatory = $false)]
+        [string]$AzureVaultName,
+        [Parameter(Mandatory = $false)]
+        [string]$AzureSecretName,
+        [switch]$SkipAzure
+    )
+
+    $result = [PSCustomObject]@{
+        Success = $false
+        Tenant = $null
+        GraphConnected = $false
+        AzureConnected = if ($SkipAzure) { $null } else { $false }
+        Errors = @()
+        ErrorRecords = @()
+        Context = $null
+    }
+
+    try {
+        $tenant = Select-Tenant -TenantId $TenantId -Label $Label
+        $result.Tenant = $tenant
+    }
+    catch {
+        $result.Errors = @($_.Exception.Message)
+        $result.ErrorRecords = @($_)
+        return $result
+    }
+
+    $tenantIdValue = $null
+    if ($null -ne $result.Tenant) {
+        if ($result.Tenant.PSObject.Properties['tenant_id']) {
+            $tenantIdValue = $result.Tenant.tenant_id
+        }
+        elseif ($result.Tenant.PSObject.Properties['TenantId']) {
+            $tenantIdValue = $result.Tenant.TenantId
+        }
+    }
+
+    if (-not $tenantIdValue) {
+        $message = 'The resolved tenant does not include a tenant identifier (tenant_id/TenantId).'
+        $result.Errors = @($message)
+        return $result
+    }
+
+    $errorMessages = New-Object System.Collections.Generic.List[string]
+    $errorRecords = New-Object System.Collections.Generic.List[System.Management.Automation.ErrorRecord]
+
+    $graphParameters = @{ TenantId = $tenantIdValue; AuthMode = $GraphAuthMode }
+    if ($GraphAuthMode -eq 'ServicePrincipal') {
+        if (-not ($GraphClientId -and $GraphVaultName -and $GraphSecretName)) {
+            $message = 'Graph service principal authentication requires -GraphClientId, -GraphVaultName, and -GraphSecretName.'
+            $errorMessages.Add($message) | Out-Null
+        }
+        else {
+            $graphParameters.ClientId = $GraphClientId
+            $graphParameters.VaultName = $GraphVaultName
+            $graphParameters.SecretName = $GraphSecretName
+        }
+    }
+
+    if ($errorMessages.Count -eq 0) {
+        try {
+            Connect-GraphContext @graphParameters
+            $result.GraphConnected = $true
+        }
+        catch {
+            $errorMessages.Add($_.Exception.Message) | Out-Null
+            $errorRecords.Add($_) | Out-Null
+        }
+    }
+
+    if (-not $SkipAzure) {
+        $azureParameters = @{ TenantId = $tenantIdValue; AuthMode = $AzureAuthMode }
+        $resolvedAzureClientId = if ($AzureClientId) { $AzureClientId } else { $GraphClientId }
+        $resolvedAzureVault = if ($AzureVaultName) { $AzureVaultName } else { $GraphVaultName }
+        $resolvedAzureSecret = if ($AzureSecretName) { $AzureSecretName } else { $GraphSecretName }
+
+        if ($AzureAuthMode -eq 'ServicePrincipal') {
+            if (-not ($resolvedAzureClientId -and $resolvedAzureVault -and $resolvedAzureSecret)) {
+                $message = 'Azure service principal authentication requires -AzureClientId/-GraphClientId, -AzureVaultName/-GraphVaultName, and -AzureSecretName/-GraphSecretName.'
+                $errorMessages.Add($message) | Out-Null
+            }
+            else {
+                $azureParameters.ClientId = $resolvedAzureClientId
+                $azureParameters.VaultName = $resolvedAzureVault
+                $azureParameters.SecretName = $resolvedAzureSecret
+            }
+        }
+
+        if ($errorMessages.Count -eq 0 -or $result.GraphConnected) {
+            try {
+                Connect-AzureContext @azureParameters
+                $result.AzureConnected = $true
+            }
+            catch {
+                $errorMessages.Add($_.Exception.Message) | Out-Null
+                $errorRecords.Add($_) | Out-Null
+            }
+        }
+    }
+
+    try {
+        $result.Context = Get-ActiveContext
+    }
+    catch {
+        Write-Verbose ("Get-ActiveContext failed to return a context summary: {0}" -f $_.Exception.Message)
+    }
+
+    $result.Errors = $errorMessages.ToArray()
+    $result.ErrorRecords = $errorRecords.ToArray()
+    if ($errorMessages.Count -eq 0) {
+        $result.Success = $true
+    }
+
+    return $result
+}
+
 #endregion
 
 #region Module Export
@@ -297,7 +498,8 @@ Export-ModuleMember -Function @(
     'Select-Tenant',
     'Connect-GraphContext',
     'Connect-AzureContext',
-    'Get-ActiveContext'
+    'Get-ActiveContext',
+    'Connect-EntraTenant'
 )
 
 #endregion
