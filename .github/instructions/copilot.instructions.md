@@ -1,0 +1,175 @@
+# GitHub Copilot repository instructions — project_powershell_cloud
+
+> **Purpose and audience:**  
+> This file provides instructions and context specifically for GitHub Copilot agents and automated workflows.  
+> The canonical unified runbook for this repository is maintained in [`AGENTS.md`](../../AGENTS.md).
+> Some content may be duplicated here for agent context, but `AGENTS.md` is authoritative for project overview, structure, PowerShell standards, testing, and coding guidelines.  
+
+## 1. Project overview
+
+- This repository is a **PowerShell-only toolkit** for generating IAM and configuration inventory exports for cloud environments.
+- The current MVP focuses on **Azure** (Entra ID, Azure Resource Manager); **AWS** support exists where scripts are present.  
+- Exports are written to `outputs/` and include a minimal header with:
+  - `generated_at` (UTC ISO-8601 timestamp)
+  - `tool_version` (tool/script version)
+  - `dataset_version` (semantic dataset version; used for future-breaking changes)  
+
+When proposing changes, keep the design centered on **deterministic, scriptable exports** that can be scheduled and audited.
+
+---
+
+## 2. How to build, run, and test
+
+When you generate code or review changes, assume the following is the canonical workflow:
+
+- **Prerequisites / setup**
+  - PowerShell 7.4+.
+  - From the repo root:
+    - Run `scripts/ensure-prereqs.ps1` to install required modules into the current user scope (Az, Microsoft.Graph, SecretManagement, PSScriptAnalyzer, Pester, etc.).  
+
+- **Typical usage**
+  - Azure export example:
+    - `scripts/export-azure_scopes.ps1` (and similar) are the primary entry points for inventory.  
+  - AWS export example:
+    - `scripts/export-aws_*.ps1` where present.
+
+- **Testing and validation**
+  - Prefer to validate PowerShell changes with:
+    - `Invoke-ScriptAnalyzer` over `.ps1`, `.psm1`, `.psd1` (no new errors; minimize warnings).  
+    - Pester tests in `tests/` when present.
+  - For modules, ensure `Import-Module` works cleanly and exported functions are discoverable with `Get-Command`.
+
+Whenever you suggest code changes in reviews, anchor your feedback in these build/test steps.
+
+---
+
+## 3. Languages, layout, and boundaries
+
+- Primary language: **PowerShell** (modules and scripts).
+- Shell scripts may exist for tooling/bootstrap; do not move core logic out of PowerShell.
+- Important directories:
+  - `modules/` — reusable modules (for example, export, connection, helpers).
+  - `scripts/` — runnable entry-point scripts.
+  - `outputs/` — generated export data (never hand-edit; do not commit large real datasets).
+  - `docs/` — repo contract, standards, runbooks, and design docs.
+  - `.codex/` — instructions and work orders for AI coding agents.
+  - `.archive/` — retired or future-phase assets (for example, old schema files).
+
+When adding or reviewing code, keep **business logic in modules** and **orchestration/parameter parsing in scripts**.
+
+---
+
+## 4. PowerShell style and quality rules
+
+Use **Microsoft Learn** guidance and **PSScriptAnalyzer** rules as your source of truth for PowerShell behavior and style, especially in code review.  
+
+Key conventions:
+
+- **Function and cmdlet style**
+  - Prefer **advanced functions** with `[CmdletBinding()]` when adding reusable commands.
+  - Use approved **Verb-Noun** naming where possible (see PowerShell cmdlet design guidelines).  
+  - Validate parameters using `[ValidateNotNullOrEmpty()]`, `[ValidateSet()]`, etc., where appropriate.
+
+- **Comment-based help**
+  - For any new public functions or scripts, include comment-based help using the standard syntax:
+    - Either single-line `# .KEYWORD` style or `<# .KEYWORD … #>` blocks.  
+  - Place help immediately before the function or at the end of the function as recommended.
+  - Avoid non-standard markers; only `#`, `<#` and `#>` are valid comment delimiters.
+
+- **ScriptAnalyzer**
+  - Any new or modified PowerShell code should be clean under `Invoke-ScriptAnalyzer` with no **new** errors.
+  - Treat high-severity warnings as things to fix unless there is a documented exception (for example, in a comment).
+
+- **Logging and side effects**
+  - Avoid `Write-Host` for operational logging. Prefer structured logging patterns used in existing modules (for example, `Write-Verbose`, `Write-Information`, `Write-Warning`).
+  - Do not introduce interactive prompts or `Read-Host` into export workflows; exports should be fully non-interactive and automatable.
+
+- **Error handling**
+  - Use `try { … } catch { … }` with meaningful error messages and rethrow or propagate where appropriate.
+  - Don’t silently swallow errors in export paths; failures should either be surfaced or clearly documented.
+
+---
+
+## 5. Cloud and IAM specifics
+
+When Copilot suggests changes or reviews code, keep in mind:
+
+- **Azure and Entra ID**
+  - Use documented modules and patterns:
+    - `Az.Accounts`, `Az.Resources`
+    - `Microsoft.Graph` / `Microsoft.Graph.Entra` for directory and identity operations.  
+  - Prefer Graph and Az cmdlets according to Microsoft Learn usage examples (parameter names, paging, throttling, retry behavior).
+
+- **AWS**
+  - Use official AWS PowerShell modules when present in this repo.
+  - Respect existing AWS credential flows; do not hardcode profiles or access keys.
+
+- **IAM / security posture**
+  - Exports often contain sensitive access data; never suggest logging secrets, tokens, or raw credentials.
+  - Do not add code that relaxes authentication or permission requirements purely for convenience.
+
+---
+
+## 6. Schema, datasets, and current-phase rules
+
+- **Current phase** requires all outputs to be validated against the appropriate schema files.
+- **Schema validation is active and mandatory**:
+  - All exports (JSON/CSV) must be validated against `docs/schemas/<dataset>.schema.json` before writing, as required by [`AGENTS.md`](../../AGENTS.md) and [`ai_project_rules.md`](../../ai_project_rules.md).
+  - Schema enforcement is required for all dataset outputs; do not bypass or remove schema validation logic.
+  - `dataset_version` metadata must be maintained to support schema versioning and future changes.
+
+In reviews, ensure that any changes maintain or improve schema validation logic, and flag any missing or incorrect schema enforcement as a violation of project rules.
+---
+
+## 7. Work orders, AI rules, and documentation
+
+This repo is governed by explicit rules and work orders:
+
+- **Work orders**
+  - `.codex/work_orders.md` (and related `.codex` files) define scoped tasks (for example, `WO-SCHEMA-001`).
+  - When generating or reviewing changes, try to keep each change set aligned to a single work order and avoid mixed concerns.
+
+- **AI rules and agents**
+  - `AGENTS.md`, `ai_project_rules.md`, and `docs/reference/repo_contract.md` are authoritative for project behavior and boundaries.
+  - Do **not** rewrite these files casually. If a code change appears to conflict with them, surface that in review comments rather than silently changing the rules.
+
+- **Docs are source of truth**
+  - README and docs under `docs/` describe intended behaviors. If existing code diverges from those docs, prefer to:
+    - Call out the mismatch in the review.
+    - Suggest either updating the code to match the docs, or updating the docs with a clear rationale.
+
+---
+
+## 8. Expectations for Copilot code review
+
+When Copilot is reviewing changes in this repository, focus comments on:
+
+1. **Correctness and safety**
+   - Is the PowerShell code valid, using correct cmdlet names and parameters per Microsoft Learn?
+   - Are error paths and edge cases (empty results, paging, throttling, permission issues) handled reasonably?
+
+2. **Export contract**
+   - Do exports still include `generated_at`, `tool_version`, and `dataset_version` fields?
+   - Are outputs written to `outputs/` (or a clearly documented location) without breaking existing tools?
+
+3. **Style and maintainability**
+   - Does the code follow advanced-function conventions, comment-based help patterns, and ScriptAnalyzer best practices?
+   - Are any new dependencies introduced that aren’t installed via `scripts/ensure-prereqs.ps1`?
+
+4. **Scope alignment**
+   - Does the change match an existing work order or documented requirement?
+   - Does it respect the current schema validation requirements and documented workflows?
+
+Avoid nitpicks that don’t materially affect correctness, readability, or alignment with project rules.
+
+---
+
+## 9. When in doubt
+
+- If a PowerShell behavior or module API is unclear, assume **Microsoft Learn** is authoritative and prefer patterns from official examples over guesses.  
+- If a proposed change conflicts with:
+  - The repo contract,
+  - AI project rules,
+  - Or an active work order,
+
+then highlight the conflict in review comments and suggest the smallest change that keeps the repository consistent and safe for deterministic, auditable exports.
