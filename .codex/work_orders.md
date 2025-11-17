@@ -326,3 +326,108 @@ Refactor `todo.md` so that it:
   - A “Per-Script / Per-Module Bring-Up” section listing scripts/modules with standard tasks.
 - All previously existing tasks are preserved and clearly tagged.
 - `todo.md` contains no explicit references to AI tooling.
+
+
+### Example of todo.md to follow
+# Project Tasks
+
+Use this file as the single backlog. Keep entries actionable and remove them as they are completed.
+
+---
+
+## Legend
+
+- **Type**
+  - `BUG`  – Fixing broken behavior or test failures.
+  - `ENH`  – Enhancements or feature improvements.
+  - `META` – Repository structure, logging, build, or cross-cutting refinements.
+  - `DOC`  – Documentation, comments, or metadata improvements.
+
+- **Area**
+  - `LOGGING`        – Run logs, diagnostics, and observability.
+  - `EXPORTS`        – Export scripts and output behavior.
+  - `MODULES`        – Shared modules (for example connection, helpers).
+  - `DOCS`           – README, runbooks, and reference docs.
+  - `SCHEMA-FUTURE`  – Schema and validation work deferred to a later phase.
+
+- **Priority**
+  - `P1` – High priority / near-term.
+  - `P2` – Medium priority.
+  - `P3` – Lower priority / future phase.
+
+---
+
+## Work Orders Snapshot
+
+The detailed implementation instructions for these items live in `.codex/WORK_ORDERS.md`.
+
+- `WO-SCHEMA-001` – Remove schema folders and de-scope schema from current phase.
+- `WO-LOGGING-001` – Add central run logging for all scripts.
+- `WO-AUDIT-001` – Merge `audit_notes` into `CHANGELOG.md` and `todo.md`.
+- `WO-AI-001` – Remove tooling references from scripts and modules.
+- `WO-TODO-001` – Restructure `todo.md` with categories and per-script/module tasks.
+
+---
+
+## Tasks by Area
+
+### LOGGING
+
+- [ ] [META][LOGGING][P1] Implement central run logging for all entrypoint scripts so each run writes a full log to `logs/` using a predictable filename pattern. (WO-LOGGING-001)
+- [ ] [ENH][LOGGING][P2] Replace or extend existing logging helpers (for example structured logging functions) so that they route output into the new run log files rather than relying on verbose-only output.
+- [ ] [DOC][LOGGING][P2] Add a short “Logging” section to the main documentation describing where logs are written, how they are named, and how to use them during troubleshooting.
+
+### DOCS
+
+- [ ] [DOC][DOCS][P1] Review `docs/` (reference, runbooks, schema guidance) for outdated statements or gaps, especially references to schemas that are no longer part of the current phase. Align wording with “raw exports first; schema later.” (WO-SCHEMA-001)
+- [ ] [DOC][DOCS][P2] Ensure the main `README.md` reflects the simplified scope: PowerShell-only tooling, Azure as the primary focus, raw export outputs to `outputs/`, and logging to `logs/`.
+- [ ] [DOC][DOCS][P2] Confirm that general troubleshooting guidance refers to log files under `logs/` instead of older patterns (for example logs in `outputs/`).
+
+### EXPORTS
+
+- [ ] [ENH][EXPORTS][P1] Expose `-TenantId` and/or `-TenantLabel` parameters on command-line scripts so operators do not have to edit `.config/tenants.json` for each run.
+- [ ] [ENH][EXPORTS][P2] Apply retry or pagination patterns to Azure exports (for example `Get-Az*` calls) so they handle throttling and large tenants more gracefully, consistent with any existing retry patterns used for Microsoft Graph.
+- [ ] [ENH][EXPORTS][P2] Standardize output file naming for export scripts so outputs in `outputs/` are predictable and include at least a timestamp and dataset/tenant identifier.
+
+### MODULES
+
+- [ ] [BUG][MODULES][P1] Validate the connection module (for example `modules/entra_connect.psm1` or its renamed equivalent) in the target environment and fix any authentication or configuration issues discovered during real runs.
+- [ ] [DOC][MODULES][P2] Update the connection module with clear comments and metadata for each significant block so operators and reviewers can understand what each part of the module is doing.
+- [ ] [ENH][MODULES][P2] Add basic parameter validation and improved error messages to the connection module and other shared modules that handle configuration, so misconfiguration is surfaced clearly.
+
+### SCHEMA-FUTURE
+
+- [ ] [ENH][SCHEMA-FUTURE][P3] Enhance any remaining schema-related helpers (for example `Test-ObjectAgainstSchema`) to enforce property types and additional fields (for example via `Test-Json` or similar), once schema work is reintroduced in a future phase.
+- [ ] [ENH][SCHEMA-FUTURE][P3] Design a minimal schema strategy and location for future dataset definitions once raw exports and logging are stable.
+
+---
+
+## Per-Script / Per-Module Bring-Up
+
+This section tracks work to verify and refine each script and module one at a time in the target (work) environment. Add additional entries as new scripts and modules are created.
+
+### scripts/ensure-prereqs.ps1
+
+- [ ] [BUG][EXPORTS][P1] Run and debug this script in the work environment; resolve any missing modules, permissions, or platform issues.
+- [ ] [ENH][EXPORTS][P2] Refine messaging so operators clearly understand what prerequisites are being installed or verified.
+- [ ] [DOC][EXPORTS][P2] Add or update any usage notes in the documentation to show how and when this script should be run.
+
+### scripts/export-azure_scopes.ps1
+
+- [ ] [BUG][EXPORTS][P1] Run and debug this export in the work environment and ensure it can complete successfully against at least one real subscription or tenant.
+- [ ] [ENH][EXPORTS][P2] Align parameter names and defaults (for example tenant/subscription selection) with the overall design so operators do not need to edit configuration files directly.
+- [ ] [META][LOGGING][P1] Confirm that this script uses the central logging pattern and produces a run log in `logs/` with the expected filename structure.
+
+### modules/entra_connect.psm1 (or updated connection module name)
+
+- [ ] [BUG][MODULES][P1] Verify that this module can successfully establish connections in the work environment using the expected environment variables and configuration files.
+- [ ] [ENH][MODULES][P2] Improve error handling so common failure modes (for example invalid credentials, missing configuration) return clear, actionable error messages.
+- [ ] [DOC][MODULES][P2] Document module responsibilities and key functions with comments and brief usage notes, so the connection setup is easy to understand.
+
+---
+
+## General Backlog Notes
+
+- Keep this file free of explicit references to any specific development tools or assistants.
+- When new work is identified, choose an appropriate Type, Area, and Priority and add it under the relevant section or create a new section as needed.
+- Remove tasks promptly once they are completed to keep this backlog accurate and lightweight.
