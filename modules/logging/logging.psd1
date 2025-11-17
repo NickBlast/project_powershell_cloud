@@ -14,7 +14,9 @@
         'Set-LogRedactionPattern',
         'Write-StructuredLog',
         'Get-CorrelationId',
-        'Invoke-WithRetry'
+        'Invoke-WithRetry',
+        'Write-ExportLogStart',
+        'Write-ExportLogResult'
     )
     CmdletsToExport = @()
     VariablesToExport = @()

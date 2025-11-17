@@ -274,6 +274,68 @@ function Invoke-WithRetry {
     }
 }
 
+function Write-ExportLogStart {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$ScriptName,
+        [Parameter(Mandatory = $true)][string]$DatasetName,
+        [string]$OutputPath,
+        [string]$TenantId,
+        [string]$SubscriptionId
+    )
+
+    $message = "Starting export for $DatasetName via $ScriptName"
+    $context = @{ dataset_name = $DatasetName }
+    if ($TenantId) { $context['tenant_id'] = $TenantId }
+    if ($SubscriptionId) { $context['subscription_id'] = $SubscriptionId }
+    if ($OutputPath) { $context['output_path'] = $OutputPath }
+
+    Write-StructuredLog -Level Info -Message $message -Context $context
+}
+
+function Write-ExportLogResult {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$ScriptName,
+        [Parameter(Mandatory = $true)][string]$DatasetName,
+        [Parameter(Mandatory = $true)][bool]$Succeeded,
+        [string]$OutputPath,
+        [int]$RowCount,
+        [string]$Message,
+        [string]$ResultsPath = (Join-Path -Path $PSScriptRoot -ChildPath '../../tests/results/last_run.json')
+    )
+
+    $status = if ($Succeeded) { 'Success' } else { 'Failed' }
+    $logContext = @{ dataset_name = $DatasetName; status = $status }
+    if ($OutputPath) { $logContext['output_path'] = $OutputPath }
+    if ($RowCount -ge 0) { $logContext['row_count'] = $RowCount }
+
+    Write-StructuredLog -Level Info -Message ($Message ? $Message : "Completed with status: $status") -Context $logContext
+
+    $resultEntry = [pscustomobject]@{
+        timestamp    = [datetime]::UtcNow.ToString('o')
+        script_name  = $ScriptName
+        dataset_name = $DatasetName
+        status       = $status
+        output_path  = $OutputPath
+        row_count    = $RowCount
+        message      = $Message
+    }
+
+    $resultsDir = Split-Path -Path $ResultsPath -Parent
+    if (-not (Test-Path -Path $resultsDir)) {
+        New-Item -Path $resultsDir -ItemType Directory -Force | Out-Null
+    }
+
+    $existing = @()
+    if (Test-Path -Path $ResultsPath) {
+        try { $existing = Get-Content -Path $ResultsPath -Raw | ConvertFrom-Json } catch { $existing = @() }
+    }
+
+    $updated = @($existing + $resultEntry)
+    $updated | ConvertTo-Json -Depth 5 | Set-Content -Path $ResultsPath
+}
+
 #endregion
 
 #region Module Export
@@ -283,7 +345,9 @@ Export-ModuleMember -Function @(
     'Set-LogRedactionPattern',
     'Write-StructuredLog',
     'Get-CorrelationId',
-    'Invoke-WithRetry'
+    'Invoke-WithRetry',
+    'Write-ExportLogStart',
+    'Write-ExportLogResult'
 )
 
 #endregion

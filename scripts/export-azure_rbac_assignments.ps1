@@ -1,53 +1,24 @@
-<#
+<#!
 .SYNOPSIS
-    Exports all Azure RBAC role assignments across all scopes.
-.DESCRIPTION
-    This script connects to Azure and retrieves a list of all role assignments.
-    This can be a long-running operation on large tenants.
-.PARAMETER OutputPath
-    The directory path where the export files will be saved. Defaults to './exports'.
-.EXAMPLE
-    PS> ./scripts/export-azure_rbac_assignments.ps1 -OutputPath .\my-azure-data -Verbose
-.EXAMPLE
-    PS> ./scripts/export-azure_rbac_assignments.ps1 -WhatIf
-.NOTES
-    Author: Repo automation
-    Version: 1.0.0
-    Use -Verbose for detailed progress and -WhatIf for a dry run (no external calls).
+    Export Azure RBAC assignments for the test subscription.
 #>
-[CmdletBinding(SupportsShouldProcess = $true)]
+[CmdletBinding()]
 param(
-    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'exports')
+    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'outputs/azure')
 )
 
 $ErrorActionPreference = 'Stop'
-$VerbosePreference = $PSBoundParameters.Verbose.IsPresent ? 'Continue' : 'SilentlyContinue'
 
-# Import shared modules
-Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psm1
-Import-Module $PSScriptRoot/../modules/logging/Logging.psm1
-Import-Module $PSScriptRoot/../modules/export/Export.psm1
+Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -Force
+Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
+Import-Module $PSScriptRoot/../modules/export/export.psd1 -Force
 
-# --- Script Configuration ---
-$ToolVersion = "1.0.0"
-$DatasetName = "azure_rbac_assignments"
-# --------------------------
+$toolVersion = '0.3.0'
+$datasetName = 'azure_role_assignments'
 
-Write-Verbose "Starting Azure RBAC assignments export..."
+Write-StructuredLog -Level Info -Message 'Starting Azure RBAC assignment export.'
+$context = Connect-EntraTestTenant -ConnectAzure
 
-# Connect to Azure
-Connect-AzureContext -TenantId (Select-Tenant).tenant_id -AuthMode DeviceCode
-Write-Verbose "Successfully connected to Azure."
-
-Write-Verbose "Enumerating all role assignments... (This may take a while)"
-# Note: In a real-world scenario, we would iterate through subscriptions and management groups
-# to avoid potential throttling or memory issues with a single giant call.
-# For this implementation, we make a single call.
 $assignments = Get-AzRoleAssignment
-
-Write-Verbose "Found $($assignments.Count) total role assignments."
-
-# Export the data
-Write-Export -DatasetName $DatasetName -Objects $assignments -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $ToolVersion
-
-Write-Verbose "Azure RBAC assignments export completed."
+Write-StructuredLog -Level Info -Message "Captured $($assignments.Count) role assignments" -Context @{ dataset_name = $datasetName }
+Write-Export -DatasetName $datasetName -Objects $assignments -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion

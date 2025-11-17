@@ -1,62 +1,39 @@
-<#
+<#!
 .SYNOPSIS
-    Exports Entra ID Applications, Service Principals, and consent grants.
-.DESCRIPTION
-    This script connects to Microsoft Graph and performs three separate exports:
-    1. All Application objects.
-    2. All Service Principal objects.
-    3. All OAuth2 permission grants (delegated and app-only consents).
-.PARAMETER OutputPath
-    The directory path where the export files will be saved. Defaults to './exports'.
-.EXAMPLE
-    PS> ./scripts/export-entra_apps_service_principals.ps1 -OutputPath .\my-entra-data
+    Export Entra applications and service principals.
 #>
 [CmdletBinding()]
 param(
-    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'exports')
+    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'outputs/entra')
 )
 
 $ErrorActionPreference = 'Stop'
-$VerbosePreference = $PSBoundParameters.Verbose.IsPresent ? 'Continue' : 'SilentlyContinue'
 
-# Import shared modules
-Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psm1
-Import-Module $PSScriptRoot/../modules/logging/Logging.psm1
-Import-Module $PSScriptRoot/../modules/export/Export.psm1
+Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -Force
+Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
+Import-Module $PSScriptRoot/../modules/export/export.psd1 -Force
 
-# --- Script Configuration ---
-$ToolVersion = "1.0.0"
-# --------------------------
+$toolVersion = '0.3.0'
+$datasetName = 'entra_apps_service_principals'
 
-Write-Verbose "Starting Entra Apps, SPs, and Consents export..."
+Write-StructuredLog -Level Info -Message 'Starting Entra app and service principal export.'
+$context = Connect-EntraTestTenant
 
-# Connect to Graph
-$tenant = Select-Tenant
-Connect-GraphContext -TenantId $tenant.tenant_id -AuthMode $tenant.preferred_auth
-Write-Verbose "Successfully connected to Microsoft Graph."
+$applications = Invoke-WithRetry -ScriptBlock { Get-MgApplication -All }
+$servicePrincipals = Invoke-WithRetry -ScriptBlock { Get-MgServicePrincipal -All }
 
-# 1. Export Applications
-$datasetApps = "entra_apps"
-Write-Verbose "Enumerating all Applications..."
-$apps = Invoke-WithRetry -ScriptBlock { Get-MgApplication -All }
-Write-Verbose "Found $($apps.Count) total applications."
-Write-Export -DatasetName $datasetApps -Objects $apps -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $ToolVersion
-Write-Verbose "$datasetApps export completed."
+$records = @()
+foreach ($app in $applications) {
+    $sp = $servicePrincipals | Where-Object { $_.AppId -eq $app.AppId } | Select-Object -First 1
+    $records += [pscustomobject]@{
+        app_id            = $app.AppId
+        app_object_id     = $app.Id
+        app_display_name  = $app.DisplayName
+        sp_object_id      = $sp.Id
+        sp_display_name   = $sp.DisplayName
+        sign_in_audience  = $app.SignInAudience
+    }
+}
 
-# 2. Export Service Principals
-$datasetSps = "entra_service_principals"
-Write-Verbose "Enumerating all Service Principals..."
-$sps = Invoke-WithRetry -ScriptBlock { Get-MgServicePrincipal -All }
-Write-Verbose "Found $($sps.Count) total service principals."
-Write-Export -DatasetName $datasetSps -Objects $sps -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $ToolVersion
-Write-Verbose "$datasetSps export completed."
-
-# 3. Export Consents (OAuth2 Permission Grants)
-$datasetConsents = "entra_consents"
-Write-Verbose "Enumerating all OAuth2 Permission Grants..."
-$consents = Invoke-WithRetry -ScriptBlock { Get-MgOauth2PermissionGrant -All }
-Write-Verbose "Found $($consents.Count) total OAuth2 permission grants."
-Write-Export -DatasetName $datasetConsents -Objects $consents -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $ToolVersion
-Write-Verbose "$datasetConsents export completed."
-
-Write-Verbose "All Entra app-related exports are complete."
+Write-StructuredLog -Level Info -Message "Captured $($records.Count) applications" -Context @{ dataset_name = $datasetName }
+Write-Export -DatasetName $datasetName -Objects $records -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion
