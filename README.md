@@ -66,9 +66,18 @@ Schema and headers are expected to live under `docs/schemas/` and CI validates s
   - Run scripts with `-Verbose` and capture output.
   - Review any `*.log` files in the `outputs/` folder.
 
+## Pull Request Philosophy
+
+- PRs should be small and focused for fast review.
+- One Work Order per PR to keep intent clear.
+- Use one branch per Work Order.
+- Every PR must use the PR template and include the Work Order ID.
+- Avoid mixed concerns in a single PR.
+- Update documentation whenever behavior changes.
+
 ## Links and governance
 
-- Repo contract (authoritative): `docs/repo_design/repo_contract.md`
+- Repo contract (authoritative): `docs/reference/repo_contract.md`
 - Contribution guidelines: `CONTRIBUTING.md`
 
 ## License and changelog

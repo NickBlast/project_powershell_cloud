@@ -1,5 +1,5 @@
 # AI Project Rules
-_Last Updated: 2025-11-13_
+_Last Updated: 2025-11-17_
 
 ## General Principles
 - Anchor every task to `AGENTS.md` plus the repo contract/design docs; implement exclusively in PowerShell 7.4+ with `lower_case_with_underscores` directories and approved Verb-Noun naming.
@@ -11,3 +11,62 @@ _Last Updated: 2025-11-13_
 
 ## Error-Derived Rules
 - _None yet — add the first entry here when a recurring issue is resolved._
+
+## Pull Request & Change Workflow Rules
+
+### PR Size Rules
+- PRs must be as small as reasonably possible; target **< 200 lines changed**.
+- PRs should be reviewable in **< 20 minutes**.
+- If a PR becomes too large, it must be split before submission.
+
+### PR Scope Rules
+- **One Work Order = One PR.**
+- PRs must have **one intent** and only modify files required for that intent.
+- Do not mix in a single PR:
+  - Refactors + behavior changes
+  - Cleanup + feature work
+  - Logging changes + export logic changes
+  - Multiple unrelated fixes
+  - Major documentation rewrites + code updates
+
+### Branching Rules
+- One branch per work order.
+- Branch naming:
+  - `wo-<ID>-short-description`
+  - Example: `wo-logging-001-central-logging`
+
+### Commit Hygiene
+- Commits must be:
+  - Small
+  - Logically grouped
+  - Free of drive-by changes
+  - Free of leftover commented-out code
+- Recommended commit grouping:
+  1. Deletes/moves
+  2. Documentation updates
+  3. Logic/config updates
+  4. Final polish
+
+### Review Rules
+- Every PR description must include:
+  - Work Order ID
+  - “This PR Does”
+  - “This PR Does NOT Do”
+  - Summary of files touched
+  - Testing performed
+- PRs must be understandable top-to-bottom without external context.
+
+### Documentation Alignment
+- If a PR changes behavior or expectations, the contributor must:
+  - Update README
+  - Update relevant `/docs/` files
+  - Update `todo.md` (mark relevant tasks complete)
+
+### Safety Rules
+- No stealth changes.
+- No mixed concerns in a single PR.
+- No hidden dependency changes.
+- No formatting + logic changes in the same commit.
+- All new behavior must be explicitly described in the PR description.
+
+All automated agents, including Codex, **MUST** follow these Pull Request & Change Workflow Rules.

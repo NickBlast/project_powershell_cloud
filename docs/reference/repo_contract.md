@@ -166,6 +166,17 @@ README.md
 
 ---
 
+## Repository Workflow Contract
+
+- **Small PRs:** Keep diffs minimal and reviewable in under 20 minutes; target under ~200 changed lines. Split oversized PRs before review.
+- **One Work Order per PR:** Each PR and branch maps to a single work order and a single intent with only the files needed for that change.
+- **Minimal diff surface:** Avoid mixing refactors with behavior changes or unrelated cleanups; no stealth or hidden dependency changes.
+- **Branch-per-work-order:** Create focused branches (e.g., `wo-<ID>-short-description`) that align to the active work order.
+- **Template adherence:** Use the repository PR template and include work order ID, scope, files touched, and testing details.
+- **Agent alignment:** All contributors and automated agents **MUST** follow the “Pull Request & Change Workflow Rules” in `ai_project_rules.md`.
+
+---
+
 ## 12) AI/Agent Guardrails
 
 - Agents **MUST** read this file, `/docs/repo_contract.md`, `/docs/schemas/*`, and `powershell_repo_design.md` before edits.
