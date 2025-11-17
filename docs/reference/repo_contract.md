@@ -164,6 +164,13 @@ README.md
   - Compliance updates (if dataset/permissions changed).
   - Risk/rollback plan.
 
+## Repository Workflow Contract
+
+- The project follows **small, tightly scoped PRs** with minimal diff surfaces that remain reviewable in under 20 minutes.
+- **One Work Order = One PR = One branch**, with branches named for the work order (for example `wo-logging-001-central-logging`).
+- Every branch uses the repository pull request template and is expected to follow the **Pull Request & Change Workflow Rules** defined in `ai_project_rules.md`.
+- All contributors and automated agents **MUST** adhere to this workflow contract when proposing changes.
+
 ---
 
 ## 12) AI/Agent Guardrails
