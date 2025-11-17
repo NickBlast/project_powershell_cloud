@@ -1,10 +1,11 @@
 # Changelog
 
-## [Unreleased] - 2025-11-13
+## [Unreleased] - 2025-11-17
 ### Added
 - Added `tests/entra_connection.Tests.ps1` to smoke-test module import, SecretManagement error handling, and the `ensure-prereqs.ps1` + `Connect-GraphContext` workflow without touching live tenants.
 
 ### Changed
+- Completed WO-PR-RULES-000 by codifying small-PR and branch-per-work-order workflows, updating CONTRIBUTING, adding a PR template, and documenting PR philosophy in README and governance docs.
 - Renamed the tenant connection module to `modules/entra_connection/entra_connection.psm1`, refreshed its Microsoft Entra documentation, and updated every script/doc import along with SecretManagement/Connect-* patterns that follow current Microsoft guidance.
 - Updated `scripts/ensure-prereqs.ps1`, README, and contract docs to treat module versions as minimums, ensure Microsoft.Graph.Entra is installed, and avoid downgrading newer Az/Graph bits.
 
