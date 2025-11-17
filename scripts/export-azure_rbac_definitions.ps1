@@ -4,7 +4,7 @@
 .DESCRIPTION
     Connects to the curated test tenant, enumerates all Azure role definitions (built-in and custom),
     and writes the dataset to CSV and JSON using the shared export module. Standard metadata fields
-    (generated_at, tool_version, dataset_version) are emitted to keep runs audit-friendly.
+    (generated_at, tool_version, optional dataset_version) are emitted to keep runs audit-friendly.
 .PARAMETER OutputPath
     Destination directory for export artifacts. Defaults to outputs/azure under the repo root.
 #>
@@ -21,7 +21,7 @@ Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -F
 Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
 Import-Module $PSScriptRoot/../modules/export/export.psd1 -Force
 
-# Dataset metadata used in downstream validation and schema headers.
+# Dataset metadata used for downstream consumers and future schema work.
 $toolVersion = '0.3.0'
 $datasetName = 'azure_role_definitions'
 

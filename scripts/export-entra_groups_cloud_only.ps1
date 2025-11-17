@@ -21,7 +21,7 @@ Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -F
 Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
 Import-Module $PSScriptRoot/../modules/export/export.psd1 -Force
 
-# Dataset metadata used by downstream schema validation.
+# Dataset metadata used for consistent downstream processing.
 $toolVersion = '0.3.0'
 $datasetName = 'entra_groups'
 

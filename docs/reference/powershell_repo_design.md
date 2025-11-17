@@ -8,13 +8,13 @@ The outputs feed:
 - **Access decision support** (access ↔ resources/services mapping),
 - **Risk & posture improvements** aligned to **NIST SP 800-53**, **CSA CCM**, **FFIEC CAT**, and each cloud’s **Well-Architected** guidance.
 
-All access must meet strict metadata requirements; this repo evaluates and enforces those requirements.
+All access must meet strict metadata requirements; schema validation is paused while datasets stabilize, but metadata stamping remains required.
 
 ---
 
 ## Naming Conventions
 
-- **Directories:** `lower_case_with_underscores` only (e.g., `docs`, `docs/schemas`, `ai/tools_internal`).  
+- **Directories:** `lower_case_with_underscores` only (e.g., `docs`, `ai/tools_internal`).
 - **PowerShell scripts/functions/cmdlets:** `Verb-Noun` casing, **hyphen** between Verb and Noun (standard PowerShell), and use **underscores within the Noun** if it contains multiple words.  
   - Examples: `Export-Role_Assignments.ps1`, `Get-Group_Memberships.ps1`, `Ensure-Prereqs.ps1`.
 - **Files:** No restriction beyond common practice; keep `README.md`, `CHANGELOG.md`, etc.
@@ -49,17 +49,17 @@ All access must meet strict metadata requirements; this repo evaluates and enfor
 
 ```
 /docs
-  /schemas                # JSON schema manifests for each dataset
+  # (Schema manifests will be reintroduced in a future validation phase.)
   /compliance             # Control mappings and evidence index
   repo_contract.md        # Deterministic rules for tools & outputs
 /modules
   /logging                # Structured logging + redaction
-  /export                 # CSV/JSON/XLSX writers with schema validation
+  /export                 # CSV/JSON/XLSX writers with metadata stamping
   /entra_connection       # Microsoft Entra + Azure auth/context helpers
 /scripts
   ensure-prereqs.ps1      # Idempotent environment bootstrap (Verb-Noun)
   export-*.ps1            # Top-level entrypoints by dataset (Verb-Noun)
-/tests                    # Pester contract tests (params, shape, schema)
+/tests                    # Pester contract tests (params, shape)
 /examples
 /.config
   tenants.json            # Non-secret tenant descriptors (ids, labels)
@@ -113,11 +113,11 @@ README.md
 
 ---
 
-## Data & Export Schemas
+## Data & Export Metadata (schema work paused)
 
-- **Formats:** CSV + JSON (optionally Parquet later).  
-- **Schema manifests:** `/docs/schemas/<dataset>.schema.json` define field order, types, nullability, and version.  
-- **Headers:** each file includes `generated_at`, `tool_version`, `dataset_version`.  
+- **Formats:** CSV + JSON (optionally Parquet later).
+- **Metadata:** each file includes `generated_at`, `tool_version`, and optional `dataset_version` (reserved for future schema alignment).
+- **Schema validation:** paused while datasets stabilize; manifests will return in a later phase.
 - **Excel:** continue to support `.xlsx` via ImportExcel for analysts; note Excel row limits in docs.
 
 ---
@@ -148,8 +148,8 @@ README.md
 - **Groups (cloud-only) & memberships**  
   **AC:** Exclude synchronized groups where required; document detection logic; membership counts consistent across repeated runs.
 
-- **Exports (dual-format)**  
-  **AC:** Each dataset emits CSV and JSON with schema-validated columns and a `dataset_version` header.
+- **Exports (dual-format)**
+  **AC:** Each dataset emits CSV and JSON with consistent metadata headers; schema validation will resume when definitions return.
 
 ---
 
@@ -210,7 +210,7 @@ flowchart LR
 
 - **Runtime:** PowerShell 7.4+  
 - **Packaging:** PSResourceGet; pinned minimum versions  
-- **Quality gates:** PSScriptAnalyzer (fail on warn), Pester contracts, schema validation  
+- **Quality gates:** PSScriptAnalyzer (fail on warn), Pester contracts
 - **Security:** AllSigned in CI; RemoteSigned in dev; SecretManagement; no secrets on disk  
-- **Outputs:** CSV + JSON; schema manifests versioned; dataset headers include `generated_at`, `tool_version`, `dataset_version`  
+- **Outputs:** CSV + JSON with metadata headers (`generated_at`, `tool_version`, optional `dataset_version`); schema manifests will return later
 - **Change control:** SemVer + mandatory CHANGELOG entries

@@ -1,118 +1,8 @@
 #
-# PowerShell Export Module with Schema Validation
+# PowerShell Export Module (raw exports phase)
 #
 
 #region Public Functions
-
-<#
-.SYNOPSIS
-    Reads a dataset's JSON schema from the /docs/schemas directory.
-.DESCRIPTION
-    Constructs the path to a schema file based on the dataset name, reads it, and converts it from JSON.
-    If the schema file is not found, it returns $null and writes a warning.
-.PARAMETER DatasetName
-    The name of the dataset, which corresponds to the schema filename (e.g., 'Azure.RBAC').
-.EXAMPLE
-    PS> $schema = Get-DatasetSchema -DatasetName 'Entra.Groups'
-    PS> if ($schema) { #... use schema ... }
-.OUTPUTS
-    [psobject]
-.NOTES
-    Returns the parsed JSON schema object, or $null if the file is not found or invalid.
-#>
-function Get-DatasetSchema {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$DatasetName
-    )
-
-    $root = Join-Path -Path $PSScriptRoot -ChildPath '..'
-    $root = Join-Path -Path $root -ChildPath '..'
-    $schemaDir = Join-Path -Path $root -ChildPath 'docs'
-    $schemaDir = Join-Path -Path $schemaDir -ChildPath 'schemas'
-    $schemaPath = Join-Path -Path $schemaDir -ChildPath "$($DatasetName).schema.json"
-    $schemaPath = Resolve-Path -Path $schemaPath -ErrorAction SilentlyContinue
-
-    if (-not (Test-Path -Path $schemaPath)) {
-        Write-Warning "Schema file not found for dataset '$DatasetName'. Looked in: $schemaPath"
-        return $null
-    }
-
-    try {
-        return Get-Content -Path $schemaPath -Raw | ConvertFrom-Json
-    }
-    catch {
-        Write-Error "Failed to read or parse schema file '$schemaPath'. Error: $_"
-        return $null
-    }
-}
-
-<#
-.SYNOPSIS
-    Tests an array of objects against a provided schema.
-.DESCRIPTION
-    Validates objects based on a schema, checking for required properties and correct data types.
-    It returns a boolean indicating success or failure and provides a list of validation errors.
-.PARAMETER InputObject
-    The array of PSObjects to validate.
-.PARAMETER Schema
-    The schema object (from Get-DatasetSchema) to validate against.
-.PARAMETER Strict
-    If specified, the function will throw a terminating error on the first validation failure.
-.EXAMPLE
-    PS> $isValid = Test-ObjectAgainstSchema -InputObject $myObjects -Schema $mySchema -ErrorVariable validationErrors
-    PS> if (-not $isValid) { $validationErrors | Format-List }
-.NOTES
-    This function provides basic validation and is not a full JSON schema validator.
-#>
-function Test-ObjectAgainstSchema {
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [psobject[]]$InputObject,
-        [Parameter(Mandatory = $true)]
-        [psobject]$Schema,
-        [switch]$Strict
-    )
-
-    $validationErrors = [System.Collections.Generic.List[string]]::new()
-    $requiredFields = $Schema.required
-    $properties = $Schema.properties
-
-    foreach ($obj in $InputObject) {
-        # Check for required fields
-        if ($requiredFields) {
-            foreach ($reqField in $requiredFields) {
-                if (-not $obj.PSObject.Properties.Name.Contains($reqField)) {
-                    $validationErrors.Add("Object missing required property: $reqField")
-                }
-            }
-        }
-
-        # Check property types
-        if ($properties) {
-            foreach ($prop in $obj.PSObject.Properties) {
-                $propName = $prop.Name
-                if ($properties.$propName) {
-                    # Placeholder: type validation can be implemented here if needed.
-                }
-            }
-        }
-    }
-
-    if ($validationErrors.Count -gt 0) {
-        Write-Warning "Schema validation failed for $($validationErrors.Count) reason(s)."
-        $validationErrors | ForEach-Object { Write-Warning "  - $_" }
-        if ($Strict) {
-            throw "Strict schema validation failed."
-        }
-        return $false
-    }
-
-    return $true
-}
 
 <#
 .SYNOPSIS
@@ -154,9 +44,9 @@ function ConvertTo-FlatRecord {
 
 <#
 .SYNOPSIS
-    Exports an array of objects to specified formats (CSV, JSON, XLSX) with metadata and schema validation.
+    Exports an array of objects to specified formats (CSV, JSON, XLSX) with metadata stamping.
 .DESCRIPTION
-    This is the main export function. It orchestrates schema validation, data normalization, and writing to files.
+    This is the main export function. It orchestrates data normalization and writing to files during the raw-export phase.
     It automatically adds metadata (timestamps, versions) to the exports.
     XLSX export is opportunistic and only runs if the ImportExcel module is available.
 .PARAMETER DatasetName
@@ -170,7 +60,7 @@ function ConvertTo-FlatRecord {
 .PARAMETER ToolVersion
     The semantic version of the tool creating the export.
 .PARAMETER DatasetVersion
-    The semantic version of the dataset schema.
+    Optional semantic version stamp for the dataset; currently informational only.
 .EXAMPLE
     PS> Write-Export -DatasetName 'Entra.Users' -Objects $users -OutputPath .\exports -Formats 'csv','json' -ToolVersion '1.0.0' -DatasetVersion '1.1.0'
 .OUTPUTS
@@ -196,9 +86,6 @@ function Write-Export {
         Write-Verbose "Output path does not exist. Creating it..."
         New-Item -Path $OutputPath -ItemType Directory -Force | Out-Null
     }
-
-    $schema = Get-DatasetSchema -DatasetName $DatasetName
-    if ($schema -and -not $DatasetVersion) { $DatasetVersion = $schema.version }
 
     $metadata = @{
         generated_at = [datetime]::UtcNow.ToString('o')
@@ -247,8 +134,6 @@ function Write-Export {
 #region Module Export
 
 Export-ModuleMember -Function @(
-    'Get-DatasetSchema',
-    'Test-ObjectAgainstSchema',
     'ConvertTo-FlatRecord',
     'Write-Export'
 )

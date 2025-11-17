@@ -44,13 +44,13 @@ Installed via `scripts/ensure-prereqs.ps1` (CurrentUser scope; minimum versions 
 ## Where outputs go
 
 Exports are written to the repository `outputs/` directory by default (or the location printed by the export script).
-Each exported dataset must include a minimal header with these top-level fields:
+Each exported dataset should include a minimal header with these top-level fields:
 
 - `generated_at` — UTC timestamp when the export was produced
 - `tool_version` — version identifier of the exporting tool/script
-- `dataset_version` — semantic dataset version; bump when introducing breaking schema changes
+- `dataset_version` — semantic dataset version reserved for future schema alignment (optional in the current raw-export phase)
 
-Schema and headers are expected to live under `docs/schemas/` and CI validates schema changes.
+Schema definitions and validation are paused while datasets stabilize and will return in a future phase.
 
 ## Minimal troubleshooting
 
