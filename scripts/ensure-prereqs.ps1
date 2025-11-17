@@ -29,7 +29,7 @@
     PS> ./scripts/ensure-prereqs.ps1 -Quiet
     Runs the check with minimal output, useful for automated scripts.
 .NOTES
-    Author: Nick Lundqusit
+    Author: Nick Lundquist
     License: See LICENSE file.
     Version: 1.1.0
 #>
