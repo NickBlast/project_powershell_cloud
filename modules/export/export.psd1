@@ -5,13 +5,11 @@
     Author = 'PrimaryJob'
     CompanyName = 'PrimaryJob'
     Copyright = '(c) PrimaryJob'
-    Description = 'Export helpers: schema validation, flattening and multi-format export (CSV/JSON/XLSX).'
+    Description = 'Export helpers: flattening and multi-format export (CSV/JSON/XLSX). Schema validation is paused.'
     PowerShellVersion = '7.4'
     CompatiblePSEditions = @('Core')
     RequiredModules = @()
     FunctionsToExport = @(
-        'Get-DatasetSchema',
-        'Test-ObjectAgainstSchema',
         'ConvertTo-FlatRecord',
         'Write-Export'
     )

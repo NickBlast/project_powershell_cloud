@@ -3,11 +3,11 @@ _Last Updated: 2025-11-17_
 
 ## General Principles
 - Anchor every task to `AGENTS.md` plus the repo contract/design docs; implement exclusively in PowerShell 7.4+ with `lower_case_with_underscores` directories and approved Verb-Noun naming.
-- Run `scripts/ensure-prereqs.ps1`, `Invoke-ScriptAnalyzer -Path . -Recurse`, `Invoke-Pester`, and `./.export_schema_test.ps1` (when exports change) during each wave; do not merge with analyzer warnings or failing tests.
-- Keep schema discipline absolute: exports must include `generated_at`, `tool_version`, `dataset_version`, validate against `docs/schemas/<dataset>.schema.json`, and trigger compliance/doc updates plus dataset version bumps whenever schemas change.
+- Run `scripts/ensure-prereqs.ps1`, `Invoke-ScriptAnalyzer -Path . -Recurse`, and `Invoke-Pester` during each wave; do not merge with analyzer warnings or failing tests.
+- Current phase is raw-export-first: keep `generated_at`, `tool_version`, and optional `dataset_version` metadata, but **do not** enforce schemas. Schema design/validation will return in a later phase.
 - Logging is mandatory: instrument scripts with `modules/logging` (`Write-StructuredLog`, correlation IDs, redaction) and store sanitized samples only under `examples/`, `logs/`, `reports/`, or `outputs/`.
 - Use SecretManagement for credentials, pin module versions via PSResourceGet, and document required permissions in `docs/compliance`.
-- Maintain the wave/micro-PR cadence by updating `todo.md`, `audit_notes/`, and `CHANGELOG.md` with problem, solution, validation evidence, schema impact, and follow-ups.
+- Maintain the wave/micro-PR cadence by updating `todo.md`, `audit_notes/`, and `CHANGELOG.md` with problem, solution, validation evidence, data impact, and follow-ups. Call out schema considerations only when that future phase is reintroduced.
 
 ## Pull Request & Change Workflow Rules
 - These rules apply to every contributor and **all automated agents (including Codex)**.

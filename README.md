@@ -3,7 +3,7 @@
 ## What this is
 
 This repository provides PowerShell-only tooling to produce an IAM inventory for cloud environments.
-The initial MVP focuses on Azure, with AWS exports supported where noted. See the authoritative repo contract for contribution and operational rules: `docs/reference/repo_contract.md`.
+The current phase focuses on raw JSON/CSV exports to stabilize datasets; schema definitions will return in a later phase once the data model hardens. See the authoritative repo contract for contribution and operational rules: `docs/reference/repo_contract.md`.
 
 ## Supported clouds (MVP)
 
@@ -48,9 +48,9 @@ Each exported dataset must include a minimal header with these top-level fields:
 
 - `generated_at` — UTC timestamp when the export was produced
 - `tool_version` — version identifier of the exporting tool/script
-- `dataset_version` — semantic dataset version; bump when introducing breaking schema changes
+- `dataset_version` — future-friendly semantic version for the dataset; keep it in metadata when known so it is ready for a later schema phase
 
-Schema and headers are expected to live under `docs/schemas/` and CI validates schema changes.
+Schema validation is paused while exports stabilize; schema definitions will be reintroduced in a future phase.
 
 ## Minimal troubleshooting
 

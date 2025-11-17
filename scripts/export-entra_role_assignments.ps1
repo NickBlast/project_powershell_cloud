@@ -3,8 +3,8 @@
     Export Entra role assignments for directory roles.
 .DESCRIPTION
     Connects to the Entra test tenant, retrieves directory role assignments with retry handling,
-    reshapes the results to the expected schema columns, and emits CSV and JSON outputs via the shared
-    export helper so metadata remains consistent.
+    reshapes the results into consistent columns, and emits CSV and JSON outputs via the shared
+    export helper so metadata remains consistent while schemas are paused.
 .PARAMETER OutputPath
     Destination directory for export artifacts. Defaults to outputs/entra under the repo root.
 #>

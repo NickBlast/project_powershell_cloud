@@ -18,7 +18,7 @@ Parameters
 Expected outputs
 - CSV: `entra_role_assignments.csv`
 - JSON: `entra_role_assignments.json`
-- Required headers/top-level keys: `generated_at`, `tool_version`, `dataset_version` plus fields like `RoleId`, `RoleDisplayName`, `MemberId`, `MemberType`.
+- Metadata headers/top-level keys: `generated_at`, `tool_version`, optional `dataset_version` plus fields like `RoleId`, `RoleDisplayName`, `MemberId`, `MemberType`. Schema validation is paused during the raw-export phase.
 
 Validation
 - Cross-check roles with Graph:

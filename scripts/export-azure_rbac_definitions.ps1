@@ -21,7 +21,7 @@ Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -F
 Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
 Import-Module $PSScriptRoot/../modules/export/export.psd1 -Force
 
-# Dataset metadata used in downstream validation and schema headers.
+# Dataset metadata stamped onto outputs (schema validation is paused).
 $toolVersion = '0.3.0'
 $datasetName = 'azure_role_definitions'
 
