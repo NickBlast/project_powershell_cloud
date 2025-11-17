@@ -2,55 +2,33 @@
 
 $repoRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..')).Path
 $moduleManifest = Join-Path -Path $repoRoot -ChildPath 'modules/entra_connection/entra_connection.psd1'
-$prereqScript = Join-Path -Path $repoRoot -ChildPath 'scripts/ensure-prereqs.ps1'
 
 Describe 'entra_connection module' -Tag 'entra_connection' {
-    BeforeAll {
-        $script:moduleManifest = $moduleManifest
-        $script:prereqScript = $prereqScript
-    }
-
     It 'imports without error' {
-        if (Get-Module -Name entra_connection) {
-            Remove-Module -Name entra_connection -Force
-        }
-
-        { Import-Module -Name $script:moduleManifest -Force } | Should -Not -Throw
+        { Import-Module -Name $moduleManifest -Force } | Should -Not -Throw
     }
 
-    Context 'Connect-GraphContext' {
-        BeforeEach {
-            Import-Module -Name $script:moduleManifest -Force | Out-Null
-        }
-
-        It 'throws a helpful error when the Graph secret is missing' {
-            $tenantId = [Guid]::NewGuid().ToString()
-
-            InModuleScope entra_connection {
-                Mock -CommandName Get-Secret -ModuleName entra_connection { return $null }
-
-                { Connect-GraphContext -TenantId $tenantId -AuthMode ServicePrincipal -ClientId '00000000-0000-0000-0000-000000000000' -VaultName 'TestVault' -SecretName 'GraphSecret' } |
-                    Should -Throw -ErrorMessage "Failed to retrieve secret 'GraphSecret' from vault 'TestVault'."
-            }
-        }
+    It 'requires ENTRA_TEST_* environment variables' {
+        $originalTenant = $env:ENTRA_TEST_TENANT_ID
+        $env:ENTRA_TEST_TENANT_ID = $null
+        Import-Module -Name $moduleManifest -Force | Out-Null
+        { Get-EntraTestContext } | Should -Throw
+        $env:ENTRA_TEST_TENANT_ID = $originalTenant
     }
 
-    Context 'Smoke validation' {
+    Context 'Get-EntraTestContext' {
         BeforeAll {
             Import-Module -Name $moduleManifest -Force | Out-Null
         }
 
-        It 'runs ensure-prereqs (WhatIf) and connects via device code without calling live services' {
-            { & $script:prereqScript -Quiet -WhatIf } | Should -Not -Throw
-
-            $tenantId = [Guid]::NewGuid().ToString()
-
-            InModuleScope entra_connection {
-                Mock -CommandName Connect-MgGraph -ModuleName entra_connection {}
-
-                { Connect-GraphContext -TenantId $tenantId -AuthMode DeviceCode } | Should -Not -Throw
-
-                Assert-MockCalled -CommandName Connect-MgGraph -ModuleName entra_connection -Times 1
+        It 'returns a context object when env vars exist' {
+            if (-not $env:ENTRA_TEST_TENANT_ID -or -not $env:ENTRA_TEST_CLIENT_ID -or -not $env:ENTRA_TEST_SECRET_VALUE) {
+                Set-ItResult -Inconclusive -Because 'ENTRA_TEST_* environment variables are not set in this environment.'
+            }
+            else {
+                $context = Get-EntraTestContext -SkipValidation
+                $context.TenantId | Should -Be $env:ENTRA_TEST_TENANT_ID
+                $context.ClientId | Should -Be $env:ENTRA_TEST_CLIENT_ID
             }
         }
     }

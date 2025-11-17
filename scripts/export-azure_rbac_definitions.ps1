@@ -1,43 +1,34 @@
 <#
 .SYNOPSIS
-    Exports all Azure RBAC role definitions, both built-in and custom.
+    Exports Azure RBAC role definitions for the configured test subscription.
 .DESCRIPTION
-    This script connects to Azure and retrieves a list of all role definitions available in the tenant.
+    Connects with the shared service principal and writes outputs/azure/azure_rbac_definitions.csv.
 .PARAMETER OutputPath
-    The directory path where the export files will be saved. Defaults to './exports'.
+    Target directory for export files. Defaults to './outputs/azure'.
 .EXAMPLE
-    PS> ./scripts/export-azure_rbac_definitions.ps1 -OutputPath .\my-azure-data
+    pwsh -NoProfile -File ./scripts/export-azure_rbac_definitions.ps1
 #>
 [CmdletBinding()]
 param(
-    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'exports')
+    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'outputs/azure')
 )
 
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = $PSBoundParameters.Verbose.IsPresent ? 'Continue' : 'SilentlyContinue'
 
-# Import shared modules
 Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psm1
 Import-Module $PSScriptRoot/../modules/logging/Logging.psm1
 Import-Module $PSScriptRoot/../modules/export/Export.psm1
 
-# --- Script Configuration ---
-$ToolVersion = "1.0.0"
-$DatasetName = "azure_rbac_definitions"
-# --------------------------
+$ToolVersion = '0.3.0'
+$DatasetName = 'azure_rbac_definitions'
 
-Write-Verbose "Starting Azure RBAC definitions export..."
+$context = Connect-EntraTestTenant
+Write-ExportLogStart -Name $DatasetName -TenantId $context.TenantId -SubscriptionId $context.SubscriptionId
 
-# Connect to Azure
-Connect-AzureContext -TenantId (Select-Tenant).tenant_id -AuthMode DeviceCode
-Write-Verbose "Successfully connected to Azure."
-
-Write-Verbose "Enumerating all role definitions..."
 $definitions = Get-AzRoleDefinition
+Write-StructuredLog -Level Info -Message "Found $($definitions.Count) Azure RBAC definitions" -Context @{ correlation_id = (Get-CorrelationId) }
 
-Write-Verbose "Found $($definitions.Count) total role definitions."
+Write-Export -DatasetName $DatasetName -Objects $definitions -OutputPath $OutputPath -Formats 'csv' -ToolVersion $ToolVersion
 
-# Export the data
-Write-Export -DatasetName $DatasetName -Objects $definitions -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $ToolVersion
-
-Write-Verbose "Azure RBAC definitions export completed."
+Write-ExportLogResult -Name $DatasetName -Success $true -OutputPath (Join-Path -Path $OutputPath -ChildPath "$DatasetName.csv") -RowCount $definitions.Count -Message 'Completed'

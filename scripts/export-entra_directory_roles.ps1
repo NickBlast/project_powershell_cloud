@@ -1,44 +1,34 @@
 <#
 .SYNOPSIS
-    Exports all Entra ID (formerly Azure AD) directory roles.
+    Exports Entra directory roles for the test tenant.
 .DESCRIPTION
-    This script connects to Microsoft Graph and retrieves a list of all available directory roles.
+    Connects using the centralized helpers and writes outputs/entra/entra_directory_roles.csv.
 .PARAMETER OutputPath
-    The directory path where the export files will be saved. Defaults to './exports'.
+    Target directory for export files. Defaults to './outputs/entra'.
 .EXAMPLE
-    PS> ./scripts/export-entra_directory_roles.ps1 -OutputPath .\my-entra-data
+    pwsh -NoProfile -File ./scripts/export-entra_directory_roles.ps1
 #>
 [CmdletBinding()]
 param(
-    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'exports')
+    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'outputs/entra')
 )
 
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = $PSBoundParameters.Verbose.IsPresent ? 'Continue' : 'SilentlyContinue'
 
-# Import shared modules
 Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psm1
 Import-Module $PSScriptRoot/../modules/logging/Logging.psm1
 Import-Module $PSScriptRoot/../modules/export/Export.psm1
 
-# --- Script Configuration ---
-$ToolVersion = "1.0.0"
-$DatasetName = "entra_directory_roles"
-# --------------------------
+$ToolVersion = '0.3.0'
+$DatasetName = 'entra_directory_roles'
 
-Write-Verbose "Starting Entra directory roles export..."
+$context = Connect-EntraTestTenant -SkipAzure
+Write-ExportLogStart -Name $DatasetName -TenantId $context.TenantId -SubscriptionId $context.SubscriptionId
 
-# Connect to Graph
-$tenant = Select-Tenant
-Connect-GraphContext -TenantId $tenant.tenant_id -AuthMode $tenant.preferred_auth
-Write-Verbose "Successfully connected to Microsoft Graph."
-
-Write-Verbose "Enumerating all directory roles..."
 $roles = Invoke-WithRetry -ScriptBlock { Get-MgDirectoryRole -All }
+Write-StructuredLog -Level Info -Message "Found $($roles.Count) directory roles" -Context @{ correlation_id = (Get-CorrelationId) }
 
-Write-Verbose "Found $($roles.Count) total directory roles."
+Write-Export -DatasetName $DatasetName -Objects $roles -OutputPath $OutputPath -Formats 'csv' -ToolVersion $ToolVersion
 
-# Export the data
-Write-Export -DatasetName $DatasetName -Objects $roles -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $ToolVersion
-
-Write-Verbose "Entra directory roles export completed."
+Write-ExportLogResult -Name $DatasetName -Success $true -OutputPath (Join-Path -Path $OutputPath -ChildPath "$DatasetName.csv") -RowCount $roles.Count -Message 'Completed'

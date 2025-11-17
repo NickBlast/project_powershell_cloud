@@ -1,72 +1,53 @@
 <#
 .SYNOPSIS
-    Exports all members for each Entra ID directory role.
+    Exports Entra directory role assignments for the test tenant.
 .DESCRIPTION
-    This script connects to Microsoft Graph, enumerates all directory roles, and then finds all members
-    (users, service principals, groups) assigned to each role.
+    Enumerates directory roles and members using the centralized test tenant connection and writes
+    outputs/entra/entra_role_assignments.csv.
 .PARAMETER OutputPath
-    The directory path where the export files will be saved. Defaults to './exports'.
+    Target directory for export files. Defaults to './outputs/entra'.
 .EXAMPLE
-    PS> ./scripts/export-entra_role_assignments.ps1 -OutputPath .\my-entra-data
-
-.EXAMPLE
-    PS> ./scripts/export-entra_role_assignments.ps1 -OutputPath .\my-entra-data -Verbose
-
-.EXAMPLE
-    PS> ./scripts/export-entra_role_assignments.ps1 -WhatIf
-.NOTES
-    Author: Repo automation
-    Version: 1.0.0
+    pwsh -NoProfile -File ./scripts/export-entra_role_assignments.ps1
 #>
-[CmdletBinding(SupportsShouldProcess = $true)]
+[CmdletBinding()]
 param(
-    [string]$OutputPath = (Join-Path -Path $PSScriptRoot -ChildPath "..\exports")
+    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'outputs/entra')
 )
 
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = $PSBoundParameters.Verbose.IsPresent ? 'Continue' : 'SilentlyContinue'
 
-# Import shared modules
 Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psm1
 Import-Module $PSScriptRoot/../modules/logging/Logging.psm1
 Import-Module $PSScriptRoot/../modules/export/Export.psm1
 
-# --- Script Configuration ---
-$ToolVersion = "1.0.0"
-$DatasetName = "entra_role_assignments"
-# --------------------------
+$ToolVersion = '0.3.0'
+$DatasetName = 'entra_role_assignments'
 
-Write-Verbose "Starting Entra role assignments export..."
-
-# Connect to Graph
-$tenant = Select-Tenant
-Connect-GraphContext -TenantId $tenant.tenant_id -AuthMode $tenant.preferred_auth
-Write-Verbose "Successfully connected to Microsoft Graph."
+$context = Connect-EntraTestTenant -SkipAzure
+Write-ExportLogStart -Name $DatasetName -TenantId $context.TenantId -SubscriptionId $context.SubscriptionId
 
 $allAssignments = [System.Collections.Generic.List[pscustomobject]]::new()
-
-Write-Verbose "Enumerating all directory roles to find members..."
 $roles = Invoke-WithRetry -ScriptBlock { Get-MgDirectoryRole -All }
-
 foreach ($role in $roles) {
     Write-Verbose "Getting members for role: $($role.DisplayName)"
     $members = Invoke-WithRetry -ScriptBlock { Get-MgDirectoryRoleMember -DirectoryRoleId $role.Id -All }
     foreach ($member in $members) {
+        $principalName = $member.AdditionalProperties.userPrincipalName
+        if (-not $principalName) { $principalName = $member.AdditionalProperties.appId }
         $allAssignments.Add([pscustomobject]@{
-            RoleId = $role.Id
-            RoleDisplayName = $role.DisplayName
-            MemberId = $member.Id
-            MemberType = $member.OdataType.Replace('#microsoft.graph.','')
-            # Attempt to get a user-friendly name
-            MemberDisplayName = $member.AdditionalProperties.displayName
-            MemberPrincipalName = $member.AdditionalProperties.userPrincipalName -or $member.AdditionalProperties.appId
+            RoleId             = $role.Id
+            RoleDisplayName    = $role.DisplayName
+            MemberId           = $member.Id
+            MemberType         = $member.OdataType.Replace('#microsoft.graph.','')
+            MemberDisplayName  = $member.AdditionalProperties.displayName
+            MemberPrincipalName = $principalName
         })
     }
 }
 
-Write-Verbose "Found $($allAssignments.Count) total role assignments."
+Write-StructuredLog -Level Info -Message "Found $($allAssignments.Count) directory role assignments" -Context @{ correlation_id = (Get-CorrelationId) }
 
-# Export the data
-Write-Export -DatasetName $DatasetName -Objects $allAssignments -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $ToolVersion
+Write-Export -DatasetName $DatasetName -Objects $allAssignments -OutputPath $OutputPath -Formats 'csv' -ToolVersion $ToolVersion
 
-Write-Verbose "Entra role assignments export completed."
+Write-ExportLogResult -Name $DatasetName -Success $true -OutputPath (Join-Path -Path $OutputPath -ChildPath "$DatasetName.csv") -RowCount $allAssignments.Count -Message 'Completed'

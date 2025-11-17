@@ -1,90 +1,70 @@
 <#
 .SYNOPSIS
-    Exports Azure scope information: Management Groups, Subscriptions, and Resource Groups.
+    Exports Azure scope hierarchy (management groups, subscriptions, resource groups).
 .DESCRIPTION
-    This script connects to Azure and enumerates the full resource hierarchy.
-    It captures parent-child relationships between Management Groups, Subscriptions, and Resource Groups.
+    Connects with the centralized test tenant credentials and writes outputs/azure/azure_scopes.csv.
 .PARAMETER OutputPath
-    The directory path where the export files will be saved. Defaults to './exports'.
+    Target directory for export files. Defaults to './outputs/azure'.
 .EXAMPLE
-    PS> ./scripts/export-azure_scopes.ps1 -OutputPath .\my-azure-data -Verbose
-.EXAMPLE
-    PS> ./scripts/export-azure_scopes.ps1 -WhatIf
-.NOTES
-    Author: Repo automation
-    Version: 1.0.0
-    Supports -WhatIf via CmdletBinding(SupportsShouldProcess=$true).
+    pwsh -NoProfile -File ./scripts/export-azure_scopes.ps1
 #>
-[CmdletBinding(SupportsShouldProcess = $true)]
+[CmdletBinding()]
 param(
-    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'exports')
+    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'outputs/azure')
 )
 
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = $PSBoundParameters.Verbose.IsPresent ? 'Continue' : 'SilentlyContinue'
 
-# Import shared modules
 Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psm1
 Import-Module $PSScriptRoot/../modules/logging/Logging.psm1
 Import-Module $PSScriptRoot/../modules/export/Export.psm1
 
-# --- Script Configuration ---
-$ToolVersion = "1.0.0"
-$DatasetName = "azure_scopes"
-# --------------------------
+$ToolVersion = '0.3.0'
+$DatasetName = 'azure_scopes'
 
-Write-Verbose "Starting Azure scopes export..."
-
-# Connect to Azure
-Connect-AzureContext -TenantId (Select-Tenant).tenant_id -AuthMode DeviceCode
-Write-Verbose "Successfully connected to Azure."
+$context = Connect-EntraTestTenant
+Write-ExportLogStart -Name $DatasetName -TenantId $context.TenantId -SubscriptionId $context.SubscriptionId
 
 $allScopes = [System.Collections.Generic.List[pscustomobject]]::new()
 
-# Get Management Groups
-Write-Verbose "Enumerating Management Groups..."
-$mgs = Get-AzManagementGroup
-foreach ($mg in $mgs) {
+$managementGroups = Get-AzManagementGroup
+foreach ($mg in $managementGroups) {
     $allScopes.Add([pscustomobject]@{
-        Type = 'ManagementGroup'
-        Id = $mg.Id
-        Name = $mg.Name
+        Type     = 'ManagementGroup'
+        Id       = $mg.Id
+        Name     = $mg.Name
         ParentId = $mg.ParentId
     })
 }
 
-# Get Subscriptions
-Write-Verbose "Enumerating Subscriptions..."
-$subs = Get-AzSubscription
-foreach ($sub in $subs) {
+$subscriptions = Get-AzSubscription
+foreach ($sub in $subscriptions) {
     $allScopes.Add([pscustomobject]@{
-        Type = 'Subscription'
-        Id = $sub.Id
-        Name = $sub.Name
+        Type     = 'Subscription'
+        Id       = $sub.Id
+        Name     = $sub.Name
         ParentId = $sub.ManagementGroupId
-        State = $sub.State
+        State    = $sub.State
     })
 }
 
-# Get Resource Groups
-Write-Verbose "Enumerating Resource Groups..."
-foreach ($sub in $subs | Where-Object { $_.State -eq 'Enabled' }) {
+foreach ($sub in $subscriptions | Where-Object { $_.State -eq 'Enabled' }) {
     Set-AzContext -Subscription $sub.Id | Out-Null
-    $rgs = Get-AzResourceGroup
-    foreach ($rg in $rgs) {
+    $resourceGroups = Get-AzResourceGroup
+    foreach ($rg in $resourceGroups) {
         $allScopes.Add([pscustomobject]@{
-            Type = 'ResourceGroup'
-            Id = $rg.ResourceId
-            Name = $rg.ResourceGroupName
-            ParentId = $sub.Id
-            Location = $rg.Location
+            Type      = 'ResourceGroup'
+            Id        = $rg.ResourceId
+            Name      = $rg.ResourceGroupName
+            ParentId  = $sub.Id
+            Location  = $rg.Location
         })
     }
 }
 
-Write-Verbose "Found $($allScopes.Count) total scopes."
+Write-StructuredLog -Level Info -Message "Found $($allScopes.Count) total Azure scopes" -Context @{ correlation_id = (Get-CorrelationId) }
 
-# Export the data
-Write-Export -DatasetName $DatasetName -Objects $allScopes -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $ToolVersion
+Write-Export -DatasetName $DatasetName -Objects $allScopes -OutputPath $OutputPath -Formats 'csv' -ToolVersion $ToolVersion
 
-Write-Verbose "Azure scopes export completed."
+Write-ExportLogResult -Name $DatasetName -Success $true -OutputPath (Join-Path -Path $OutputPath -ChildPath "$DatasetName.csv") -RowCount $allScopes.Count -Message 'Completed'

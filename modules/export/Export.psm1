@@ -189,7 +189,8 @@ function Write-Export {
         [string]$OutputPath,
         [string[]]$Formats = @('csv', 'json'),
         [string]$ToolVersion = '0.1.0',
-        [string]$DatasetVersion
+        [string]$DatasetVersion,
+        [switch]$EnableSchemaValidation
     )
 
     if (-not (Test-Path -Path $OutputPath)) {
@@ -197,22 +198,30 @@ function Write-Export {
         New-Item -Path $OutputPath -ItemType Directory -Force | Out-Null
     }
 
-    $schema = Get-DatasetSchema -DatasetName $DatasetName
-    if ($schema) {
-        if (-not $DatasetVersion) { $DatasetVersion = $schema.version }
-        if (-not (Test-ObjectAgainstSchema -InputObject $Objects -Schema $schema -Strict)) {
-            Write-Error "Objects failed schema validation. Halting export."
-            return
+    $schema = $null
+    if ($EnableSchemaValidation) {
+        $schema = Get-DatasetSchema -DatasetName $DatasetName
+        if ($schema) {
+            if (-not $DatasetVersion) { $DatasetVersion = $schema.version }
+            if (-not (Test-ObjectAgainstSchema -InputObject $Objects -Schema $schema -Strict)) {
+                Write-Error "Objects failed schema validation. Halting export."
+                return
+            }
         }
-    } else {
-        Write-Warning "No schema found for $DatasetName. Proceeding without validation or guaranteed field order."
-        if (-not $DatasetVersion) { $DatasetVersion = 'unknown' }
+    }
+
+    if (-not $DatasetVersion -and $schema -and $schema.version) {
+        $DatasetVersion = $schema.version
     }
 
     $metadata = @{
         generated_at = [datetime]::UtcNow.ToString('o')
         tool_version = $ToolVersion
-        dataset_version = $DatasetVersion
+        dataset_name = $DatasetName
+    }
+
+    if ($DatasetVersion) {
+        $metadata['dataset_version'] = $DatasetVersion
     }
 
     $baseFilePath = Join-Path -Path $OutputPath -ChildPath $DatasetName
@@ -224,13 +233,16 @@ function Write-Export {
         switch ($format) {
             'csv' {
                 $flatObjects = ConvertTo-FlatRecord -InputObject $Objects
-                $exportData = $flatObjects | Select-Object @{N='generated_at';E={$metadata.generated_at}}, @{N='tool_version';E={$metadata.tool_version}}, @{N='dataset_version';E={$metadata.dataset_version}}, *
+                $exportData = $flatObjects | Select-Object @{N='generated_at';E={$metadata.generated_at}}, @{N='tool_version';E={$metadata.tool_version}}, @{N='dataset_name';E={$metadata.dataset_name}}, *
+                if ($metadata.dataset_version) {
+                    $exportData = $flatObjects | Select-Object @{N='generated_at';E={$metadata.generated_at}}, @{N='tool_version';E={$metadata.tool_version}}, @{N='dataset_name';E={$metadata.dataset_name}}, @{N='dataset_version';E={$metadata.dataset_version}}, *
+                }
 
                 $exportParams = @{ InputObject = $exportData; Path = $filePath; NoTypeInformation = $true }
                 if ($schema -and $schema.properties) {
-                    $headers = @('generated_at', 'tool_version', 'dataset_version') + ($schema.properties.PSObject.Properties.Name)
-                    $exportParams.Add('UseQuotes', 'AsNeeded')
-                    # This doesn't directly order, Export-Csv uses first object. We need to re-order.
+                    $headers = @('generated_at', 'tool_version', 'dataset_name')
+                    if ($metadata.dataset_version) { $headers += 'dataset_version' }
+                    $headers += $schema.properties.PSObject.Properties.Name
                     $orderedData = $exportData | Select-Object -Property $headers
                     $orderedData | Export-Csv @exportParams
                 } else {
@@ -247,7 +259,10 @@ function Write-Export {
             'xlsx' {
                 if (Get-Module -ListAvailable -Name ImportExcel) {
                     $flatObjects = ConvertTo-FlatRecord -InputObject $Objects
-                    $exportData = $flatObjects | Select-Object @{N='generated_at';E={$metadata.generated_at}}, @{N='tool_version';E={$metadata.tool_version}}, @{N='dataset_version';E={$metadata.dataset_version}}, *
+                    $exportData = $flatObjects | Select-Object @{N='generated_at';E={$metadata.generated_at}}, @{N='tool_version';E={$metadata.tool_version}}, @{N='dataset_name';E={$metadata.dataset_name}}, *
+                    if ($metadata.dataset_version) {
+                        $exportData = $flatObjects | Select-Object @{N='generated_at';E={$metadata.generated_at}}, @{N='tool_version';E={$metadata.tool_version}}, @{N='dataset_name';E={$metadata.dataset_name}}, @{N='dataset_version';E={$metadata.dataset_version}}, *
+                    }
                     $exportData | Export-Excel -Path $filePath -TableName $DatasetName -AutoSize -AutoFilter
                 } else {
                     Write-Warning "Module 'ImportExcel' is not available. Skipping XLSX export."

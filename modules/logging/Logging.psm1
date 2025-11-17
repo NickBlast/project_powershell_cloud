@@ -16,6 +16,7 @@ $script:RedactionPatterns = @(
 )
 
 $script:CorrelationId = [guid]::NewGuid().ToString()
+$script:LastRunResults = @()
 
 #endregion
 
@@ -274,6 +275,66 @@ function Invoke-WithRetry {
     }
 }
 
+function Write-ExportLogStart {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Name,
+        [string]$TenantId,
+        [string]$SubscriptionId
+    )
+
+    $message = "Starting $Name"
+    if ($TenantId) { $message += " | Tenant: $TenantId" }
+    if ($SubscriptionId) { $message += " | Subscription: $SubscriptionId" }
+    Write-StructuredLog -Level Info -Message $message -Context @{ correlation_id = (Get-CorrelationId) }
+}
+
+function Write-ExportLogResult {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Name,
+        [Parameter(Mandatory)]
+        [bool]$Success,
+        [string]$OutputPath,
+        [int]$RowCount,
+        [string]$Message,
+        [string]$ResultFile
+    )
+
+    $level = $Success ? 'Info' : 'Error'
+    $status = $Success ? 'Success' : 'Failed'
+    $logMessage = "$Name completed with status $status"
+    if ($Message) { $logMessage += " | $Message" }
+    Write-StructuredLog -Level $level -Message $logMessage -Context @{ correlation_id = (Get-CorrelationId) }
+
+    $record = [pscustomobject]@{
+        name        = $Name
+        status      = $status
+        output_path = $OutputPath
+        row_count   = $RowCount
+        message     = $Message
+        timestamp   = [datetime]::UtcNow.ToString('o')
+    }
+
+    $script:LastRunResults += $record
+
+    if (-not $ResultFile) {
+        $repoRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..')).Path
+        $repoRoot = (Resolve-Path -Path (Join-Path -Path $repoRoot -ChildPath '..')).Path
+        $ResultFile = Join-Path -Path $repoRoot -ChildPath 'tests/results/last_run.json'
+    }
+
+    $resultDir = Split-Path -Path $ResultFile -Parent
+    if (-not (Test-Path -Path $resultDir)) {
+        New-Item -Path $resultDir -ItemType Directory -Force | Out-Null
+    }
+
+    $fileContent = @{ generated_at = [datetime]::UtcNow.ToString('o'); entries = $script:LastRunResults }
+    $fileContent | ConvertTo-Json -Depth 6 | Out-File -FilePath $ResultFile -Encoding UTF8
+}
+
 #endregion
 
 #region Module Export
@@ -283,7 +344,9 @@ Export-ModuleMember -Function @(
     'Set-LogRedactionPattern',
     'Write-StructuredLog',
     'Get-CorrelationId',
-    'Invoke-WithRetry'
+    'Invoke-WithRetry',
+    'Write-ExportLogStart',
+    'Write-ExportLogResult'
 )
 
 #endregion
