@@ -1,49 +1,28 @@
-<#
+<#!
 .SYNOPSIS
-    Exports all cloud-only Entra ID groups.
+    Export Entra cloud-only groups to outputs/entra.
 .DESCRIPTION
-    This script connects to Microsoft Graph and retrieves a list of all groups that are not synchronized
-    from an on-premises Active Directory.
-.PARAMETER OutputPath
-    The directory path where the export files will be saved. Defaults to './exports'.
-.EXAMPLE
-    PS> ./scripts/export-entra_groups_cloud_only.ps1 -OutputPath .\my-entra-data
+    Connects to the configured test tenant using service principal credentials from ENTRA_TEST_* variables
+    and writes a CSV and JSON snapshot of cloud-only groups with standard metadata headers.
 #>
 [CmdletBinding()]
 param(
-    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'exports')
+    [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'outputs/entra')
 )
 
 $ErrorActionPreference = 'Stop'
-$VerbosePreference = $PSBoundParameters.Verbose.IsPresent ? 'Continue' : 'SilentlyContinue'
 
-# Import shared modules
-Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psm1
-Import-Module $PSScriptRoot/../modules/logging/Logging.psm1
-Import-Module $PSScriptRoot/../modules/export/Export.psm1
+Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -Force
+Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
+Import-Module $PSScriptRoot/../modules/export/export.psd1 -Force
 
-# --- Script Configuration ---
-$ToolVersion = "1.0.0"
-$DatasetName = "entra_groups_cloud_only"
-# --------------------------
+$toolVersion = '0.3.0'
+$datasetName = 'entra_groups'
 
-Write-Verbose "Starting Entra cloud-only groups export..."
+Write-StructuredLog -Level Info -Message 'Starting Entra cloud-only groups export.'
+$context = Connect-EntraTestTenant
 
-# Connect to Graph
-$tenant = Select-Tenant
-Connect-GraphContext -TenantId $tenant.tenant_id -AuthMode $tenant.preferred_auth
-Write-Verbose "Successfully connected to Microsoft Graph."
+$groups = Invoke-WithRetry -ScriptBlock { Get-MgGroup -Filter "onPremisesSyncEnabled eq null" -All }
+Write-StructuredLog -Level Info -Message "Found $($groups.Count) cloud-only groups" -Context @{ dataset_name = $datasetName }
 
-# The filter for cloud-only groups is where onPremisesSyncEnabled is null or false.
-# Using 'null' is generally effective.
-$filter = "onPremisesSyncEnabled eq null"
-Write-Verbose "Enumerating all cloud-only groups using filter: $filter"
-
-$groups = Invoke-WithRetry -ScriptBlock { Get-MgGroup -Filter $filter -All }
-
-Write-Verbose "Found $($groups.Count) total cloud-only groups."
-
-# Export the data
-Write-Export -DatasetName $DatasetName -Objects $groups -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $ToolVersion
-
-Write-Verbose "Entra cloud-only groups export completed."
+Write-Export -DatasetName $datasetName -Objects $groups -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion
