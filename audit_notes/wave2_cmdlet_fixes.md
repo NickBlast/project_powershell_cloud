@@ -23,7 +23,7 @@
 2) README dependencies
 
 - Added “Required Modules” section enumerating key modules installed by `ensure-prereqs.ps1`.
-- Corrected repo contract link path to `docs/repo_design/repo_contract.md`.
+- Corrected repo contract link path to `docs/reference/repo_contract.md`.
 
 ## Notes & Deferrals
 

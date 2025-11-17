@@ -3,7 +3,7 @@
 ## What this is
 
 This repository provides PowerShell-only tooling to produce an IAM inventory for cloud environments.
-The initial MVP focuses on Azure, with AWS exports supported where noted. See the authoritative repo contract for contribution and operational rules: `docs/repo_contract.md`.
+The initial MVP focuses on Azure, with AWS exports supported where noted. See the authoritative repo contract for contribution and operational rules: `docs/reference/repo_contract.md`.
 
 ## Supported clouds (MVP)
 

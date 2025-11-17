@@ -1,5 +1,5 @@
 # AI Project Rules
-_Last Updated: 2025-11-13_
+_Last Updated: 2025-11-17_
 
 ## General Principles
 - Anchor every task to `AGENTS.md` plus the repo contract/design docs; implement exclusively in PowerShell 7.4+ with `lower_case_with_underscores` directories and approved Verb-Noun naming.
