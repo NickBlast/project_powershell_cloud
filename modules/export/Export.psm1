@@ -4,7 +4,7 @@
 
 #region Public Functions
 
-<#!
+<#
 .SYNOPSIS
     Normalizes complex objects into flat records suitable for CSV export.
 .DESCRIPTION
@@ -43,7 +43,7 @@ function ConvertTo-FlatRecord {
     return $outputRecords
 }
 
-<#!
+<#
 .SYNOPSIS
     Exports an array of objects to specified formats (CSV, JSON, XLSX) with metadata.
 .DESCRIPTION
