@@ -1,46 +1,45 @@
-# Contributing
+# Contributing Guidelines
 
-This file summarizes contribution rules for this repository. See `docs/repo_contract.md` for the authoritative contract and rationale.
+This repository uses a strict, minimal, Work-Order-driven workflow.
 
-Prerequisites
-- Ensure local prerequisites are installed before development:
-  pwsh -NoProfile -File scripts/ensure-prereqs.ps1
+## Branching
 
-Branching
-- Use feature branches with the following prefixes:
-  - feat/<area>__<short> — new features
-  - fix/<area>__<short> — bug fixes
-  - docs/<area>__<short> — documentation updates
+- One Work Order = One PR = One Branch
+- Branch naming:
+  - `wo-<ID>-short-description`
+  - Example: `wo-schema-001-remove-schema-files`
 
-Examples:
-- feat/storage__upload-progress
-- fix/cli__arg-parsing
+## Pull Requests
 
-Commits
-- Follow Conventional Commits (type(scope): subject). Examples:
-  - feat(cli): add upload command
-  - fix(vm): handle null response
+- PR MUST reference its Work Order ID in the title.
+- PR MUST contain only one logical change.
+- PR MUST follow the PR template.
+- Keep PRs under ~200 changed lines whenever possible.
+- Commits must be small and logical:
+  - File removal/moves
+  - Documentation updates
+  - Logic modifications
+  - Final polish
 
-Code style and quality
-- PSScriptAnalyzer must be clean for changed files. CI will run PSScriptAnalyzer.
-- PowerShell source uses 4-space indentation for scripts and modules.
-- Comment-based help is required for all public functions, exported cmdlets, and top-level scripts.
+## Review Expectations
 
-Security
-- Do not commit secrets, API keys, or credentials to the repository or workspace.
-- Redact sensitive values in logs and test output before committing or publishing artifacts.
-- CI runs with script signing policy AllSigned; ensure artifacts and scripts are signed where required.
+- PR must be readable in under 20 minutes.
+- No “stealth changes.”
+- No mixing:
+  - Cleanup + feature work
+  - Logging + logic changes
+  - Schema + export modifications
 
-Schemas and dataset changes
-- Any change that affects datasets must include schema validation tests and updates under `docs/schemas/`.
-- Breaking dataset changes must bump `dataset_version` in the schema, and include a migration note in the PR describing upgrade steps.
+## Documentation
 
-Pull Request checklist
-- Include lint and test output in the PR description (or link to CI run).
-- Note whether the change affects schemas/datasets and link to the schema file(s).
-- State the acceptance criteria and include steps to verify them.
-- Describe risk and rollback steps (how to revert or mitigate if the change causes regressions).
+If a PR affects behavior:
 
-Links
-- Repo contract (authoritative): `docs/repo_contract.md`
-- Conventional Commits: https://www.conventionalcommits.org/
+- Update README
+- Update `/docs/`
+- Update `todo.md` (mark relevant tasks complete)
+
+## Testing
+
+- Every PR must be runnable in isolation.
+
+Refer to `docs/reference/repo_contract.md` and `ai_project_rules.md` for the authoritative workflow contract and additional guardrails.

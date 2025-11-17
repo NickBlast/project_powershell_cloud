@@ -68,8 +68,16 @@ Schema and headers are expected to live under `docs/schemas/` and CI validates s
 
 ## Links and governance
 
-- Repo contract (authoritative): `docs/repo_design/repo_contract.md`
+- Repo contract (authoritative): `docs/reference/repo_contract.md`
 - Contribution guidelines: `CONTRIBUTING.md`
+
+## Pull Request Philosophy
+
+- Keep PRs small, focused, and reviewable in under 20 minutes.
+- Align each PR to exactly one Work Order and one branch.
+- Name branches for the Work Order and use the pull request template.
+- Avoid mixed concerns; every PR should have a single intent.
+- Update documentation whenever behavior or expectations change.
 
 ## License and changelog
 
