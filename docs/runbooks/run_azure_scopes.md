@@ -18,7 +18,7 @@ Parameters
 Expected outputs
 - CSV: `azure_scopes.csv`
 - JSON: `azure_scopes.json`
-- Required headers/top-level keys in JSON: `generated_at`, `tool_version`, `dataset_version` plus scope fields (`Type`, `Id`, `Name`, `ParentId`, ...).
+- Metadata headers/top-level keys in JSON: `generated_at`, `tool_version`, optional `dataset_version` plus scope fields (`Type`, `Id`, `Name`, `ParentId`, ...). Schema validation is paused during the raw-export phase.
 
 Validation
 - Cross-check subscription count with Az:

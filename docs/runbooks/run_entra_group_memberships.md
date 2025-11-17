@@ -17,7 +17,7 @@ Parameters
 Expected outputs
 - CSV: `entra_group_memberships.csv`
 - JSON: `entra_group_memberships.json`
-- Required headers/top-level keys: `generated_at`, `tool_version`, `dataset_version` plus fields like `GroupId`, `GroupDisplayName`, `MemberId`, `MemberType`.
+- Metadata headers/top-level keys: `generated_at`, `tool_version`, optional `dataset_version` plus fields like `GroupId`, `GroupDisplayName`, `MemberId`, `MemberType`. Schema validation is paused during the raw-export phase.
 
 Validation
 - Cross-check total groups with Graph:

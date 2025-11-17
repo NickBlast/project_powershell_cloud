@@ -17,7 +17,7 @@ Parameters
 Expected outputs
 - CSV: `entra_apps_service_principals.csv`
 - JSON: `entra_apps_service_principals.json`
-- Required headers/top-level keys: `generated_at`, `tool_version`, `dataset_version` plus fields like `AppId`, `DisplayName`, `AppOwner`, `SignInAudience`.
+- Metadata headers/top-level keys: `generated_at`, `tool_version`, optional `dataset_version` plus fields like `AppId`, `DisplayName`, `AppOwner`, `SignInAudience`. Schema validation is paused during the raw-export phase.
 
 Validation
 - Cross-check with Graph:

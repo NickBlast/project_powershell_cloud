@@ -17,7 +17,7 @@ Static Analysis
 Help & Docs
 
 - Every exported function must have comment-based help or appear in PlatyPS output.
-- Keep README/CHANGELOG and runbooks aligned with current modules and schemas.
+- Keep README/CHANGELOG and runbooks aligned with the current raw-export phase (schema validation is paused).
 
 Packaging & Runtime
 
@@ -29,4 +29,4 @@ Repository Conventions (recap)
 
 - Modules: `modules/entra_connection`, `modules/export`, `modules/logging`.
 - Scripts: `scripts/` entry points (support `-WhatIf` where relevant).
-- Schemas: `docs/schemas/`; runbooks: `docs/runbooks/`.
+- Runbooks: `docs/runbooks/` (schema references are deferred until future phases).

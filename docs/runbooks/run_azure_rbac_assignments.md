@@ -18,7 +18,7 @@ Parameters
 Expected outputs
 - CSV: `azure_rbac_assignments.csv`
 - JSON: `azure_rbac_assignments.json`
-- Required headers/top-level keys: `generated_at`, `tool_version`, `dataset_version` plus role assignment fields (e.g., `PrincipalId`, `RoleDefinitionId`, `Scope`).
+- Metadata headers/top-level keys: `generated_at`, `tool_version`, optional `dataset_version` plus role assignment fields (e.g., `PrincipalId`, `RoleDefinitionId`, `Scope`). Schema validation is paused during the raw-export phase.
 
 Validation
 - Cross-check total assignments with Az (per subscription):

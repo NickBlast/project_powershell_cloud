@@ -3,8 +3,8 @@
     Export Azure RBAC assignments for the test subscription.
 .DESCRIPTION
     Connects to the preconfigured test tenant, retrieves all role assignments visible to the service
-    principal, and writes the dataset to CSV and JSON using the shared export module so schema headers
-    remain consistent across runs. Logging is routed through the project logger for auditability.
+    principal, and writes the dataset to CSV and JSON using the shared export module so metadata
+    remains consistent across runs. Logging is routed through the project logger for auditability.
 .PARAMETER OutputPath
     Destination directory for the export artifacts. Defaults to outputs/azure under the repo root.
 #>

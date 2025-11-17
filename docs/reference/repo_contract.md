@@ -12,7 +12,7 @@
 - **Determinism.** A fresh clone **MUST** become buildable and runnable via a single command: `pwsh -NoProfile -File scripts/ensure-prereqs.ps1`.
 - **Idempotency.** All exports **MUST** be safe to re-run without side effects; repeated runs produce the same results for the same inputs.
 - **Least privilege.** All access paths **MUST** use read-only roles/permissions documented in `/docs/compliance`.
-- **Evidence-first.** Outputs **MUST** be suitable as audit evidence (traceable, timestamped, schema-valid).
+- **Evidence-first.** Outputs **MUST** be suitable as audit evidence (traceable, timestamped, metadata-rich). Schema governance is paused until datasets stabilize.
 
 ---
 
@@ -30,7 +30,6 @@
 - **Directories:** lower_case_with_underscores
 ```
 /docs
-  /schemas
   /compliance
   repo_contract.md
 /modules
@@ -50,7 +49,6 @@ README.md
 - **File locations (normative):**
   - New CLI entry points → `/scripts/*.ps1`
   - Reusable logic → `/modules/<area>/*.psm1`
-  - Schemas → `/docs/schemas/*.schema.json`
   - Compliance maps → `/docs/compliance/*.csv`
   - AI rules → `/ai/*.md`
   - Tenant descriptors (non-secret) → `/.config/tenants.json`
@@ -104,17 +102,16 @@ README.md
 
 ---
 
-## 7) Data Outputs & Schemas
+## 7) Data Outputs (schema governance paused)
 
 - **Formats:** Every dataset **MUST** export **CSV** and **JSON** (Parquet MAY be added later).
 - **Headers/metadata:** Each output file **MUST** include:
   - `generated_at` (UTC ISO 8601)
   - `tool_version` (SemVer of this tool)
-  - `dataset_version` (schema version for the dataset)
-- **Schemas:** `/docs/schemas/<dataset>.schema.json` **MUST** define:
-  - Column names (ordered), types, nullability, and primary key(s).
-- **Validation:** The Export module **MUST** validate objects against the schema before writing files.
-- **Output paths:** CLI scripts **MUST** accept `-OutputPath` (default: current directory).  
+  - `dataset_version` (future-friendly, optional until schemas return)
+- **Schemas:** Schema definitions are paused for this phase and will be reintroduced once datasets stabilize.
+- **Validation:** No schema validation is enforced in the current phase; focus on deterministic raw exports.
+- **Output paths:** CLI scripts **MUST** accept `-OutputPath` (default: current directory).
   Samples for docs/testing **SHOULD** go under `/examples/`.
 
 ---
@@ -124,7 +121,7 @@ README.md
 - **Linting:** `Invoke-ScriptAnalyzer -Recurse` **MUST** be clean (warnings fail CI).
 - **Tests:** Use **Pester** for contract-level tests:
   - Function parameters and basic behaviors.
-  - Schema shape validation of emitted objects prior to export.
+  - Export pipeline smoke checks (no schema enforcement during this phase).
 - **Samples:** Provide small, sanitized sample outputs in `/examples/` where feasible.
 
 ---
@@ -138,17 +135,14 @@ README.md
 5. **publish** — Publish to private feed or attach signed artifacts.  
 6. **artifacts** — Save build logs, analyzer report, and (optional) synthetic sample exports.
 
-> Pipelines **MUST** fail on any analyzer warning, test failure, or schema validation error.
+> Pipelines **MUST** fail on any analyzer warning or test failure. Schema validation is paused until it returns in a future phase.
 
 ---
 
 ## 10) Change Control
 
-- **Versioning:** Semantic Versioning (SemVer) for tool releases; `dataset_version` for schema changes.
-- **Breaking schema changes:**
-  - **REQUIRES** `dataset_version` bump and migration note in the dataset’s schema file.
-  - Update `/docs/compliance` and tests accordingly.
-  - Announce in `CHANGELOG.md` with **Changed** and **Breaking** sections.
+- **Versioning:** Semantic Versioning (SemVer) for tool releases. `dataset_version` is future-focused metadata to ease later schema reintroduction.
+- **Schema governance:** Formal schema change controls are paused until schemas are reintroduced. Re-enable version bumps and migration notes when the schema phase resumes.
 - **Changelog:** Every PR **MUST** update `CHANGELOG.md` under **Added / Changed / Fixed** with affected files and rationale.
 
 ---
@@ -160,7 +154,7 @@ README.md
 - **Pull Requests MUST include:**
   - Problem statement & solution summary.
   - Acceptance criteria and evidence (lint/test output).
-  - Schema impact (version, migration note, CSV header example).
+  - Data impact (fields/metadata changes). Call out schema considerations only when the future schema phase resumes.
   - Compliance updates (if dataset/permissions changed).
   - Risk/rollback plan.
 
@@ -175,10 +169,10 @@ README.md
 
 ## 12) AI/Agent Guardrails
 
-- Agents **MUST** read this file, `/docs/repo_contract.md`, `/docs/schemas/*`, and `powershell_repo_design.md` before edits.
-- Agents **MUST** propose a short plan (files, functions, tests, schema impact) before making changes.
+- Agents **MUST** read this file and `powershell_repo_design.md` before edits. Schema references are paused until definitions return in a later phase.
+- Agents **MUST** propose a short plan (files, functions, tests, data impact) before making changes. Include schema notes only when that future phase returns.
 - Agents **MUST NOT** introduce new runtimes, external CLIs, or unapproved modules without explicit user approval.
-- Any schema change **REQUIRES** user approval prior to implementation.
+- Schema work will require explicit approval once reintroduced; no schema edits are expected in the current phase.
 
 ---
 
@@ -188,7 +182,7 @@ When adding or modifying a dataset/export, include explicit AC like:
 
 - **AC-1 (Coverage):** Export includes all records for scope _S_ (validated by cross-check command N).
 - **AC-2 (Parity):** Principal/resource count parity with portal/API reference sample ±0%.
-- **AC-3 (Schema):** CSV and JSON conform to `/docs/schemas/<dataset>.schema.json`; headers include `generated_at`, `tool_version`, `dataset_version`.
+- **AC-3 (Schema – future phase):** Reserved for schema validation once definitions return. For now, exports include metadata headers (`generated_at`, `tool_version`, optional `dataset_version`) without schema enforcement.
 - **AC-4 (Idempotency):** Re-running with the same inputs overwrites outputs deterministically.
 - **AC-5 (Security):** No secrets or PII written to logs; redaction verified.
 

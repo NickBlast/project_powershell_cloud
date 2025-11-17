@@ -4,7 +4,7 @@
 .DESCRIPTION
     Connects to the standard test tenant, pulls all subscriptions visible to the service principal,
     normalizes the data into a flat record shape, and writes CSV and JSON artifacts with the shared
-    export pipeline so downstream schema validation remains consistent.
+    export pipeline so metadata and structure remain consistent while schemas are paused.
 .PARAMETER OutputPath
     Destination directory for export artifacts. Defaults to outputs/azure under the repo root.
 #>
@@ -29,7 +29,7 @@ $datasetName = 'azure_subscriptions'
 Write-StructuredLog -Level Info -Message 'Starting Azure subscription export.'
 $context = Connect-EntraTestTenant -ConnectAzure
 
-# Fetch subscriptions and reshape to the columns expected by downstream schema validation.
+# Fetch subscriptions and reshape to consistent columns for downstream processing.
 $subscriptions = Get-AzSubscription
 $records = foreach ($sub in $subscriptions) {
     [pscustomobject]@{

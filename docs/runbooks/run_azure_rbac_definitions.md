@@ -18,7 +18,7 @@ Parameters
 Expected outputs
 - CSV: `azure_rbac_definitions.csv`
 - JSON: `azure_rbac_definitions.json`
-- Required headers/top-level keys: `generated_at`, `tool_version`, `dataset_version` plus definition fields (`Id`, `Name`, `Permissions`, `AssignableScopes`).
+- Metadata headers/top-level keys: `generated_at`, `tool_version`, optional `dataset_version` plus definition fields (`Id`, `Name`, `Permissions`, `AssignableScopes`). Schema validation is paused during the raw-export phase.
 
 Validation
 - Cross-check role definitions with Az:

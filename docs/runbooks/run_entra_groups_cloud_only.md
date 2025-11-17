@@ -17,7 +17,7 @@ Parameters
 Expected outputs
 - CSV: `entra_groups_cloud_only.csv`
 - JSON: `entra_groups_cloud_only.json`
-- Required headers/top-level keys: `generated_at`, `tool_version`, `dataset_version` plus group fields (`Id`, `DisplayName`, `Mail`, `GroupTypes`).
+- Metadata headers/top-level keys: `generated_at`, `tool_version`, optional `dataset_version` plus group fields (`Id`, `DisplayName`, `Mail`, `GroupTypes`). Schema validation is paused during the raw-export phase.
 
 Validation
 - Cross-check groups with Graph and filter cloud-only:
