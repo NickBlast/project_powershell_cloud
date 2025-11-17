@@ -14,6 +14,14 @@
 - Reworked the analyzer phase in `scripts/ensure-prereqs.ps1` to enumerate PowerShell files explicitly and skip generated folders, eliminating the intermittent `Invoke-ScriptAnalyzer` null-reference failure.
 - Ensured analyzer targets are passed as a strongly typed `string[]` list so `Invoke-ScriptAnalyzer` no longer receives `System.Object[]` and fails parameter binding.
 
+### WO-SCHEMA-001 — Remove all schema assets and scrub schema references
+
+- Completed removal of all schema JSON assets and legacy schema helpers.
+- Updated README, repo_contract, AGENTS, standards, runbooks, and AI rules to reflect schema as a future-phase requirement.
+- Ensured all export modules run without schema dependencies.
+- Verified module syntax, corrected invalid comment-based help, and passed ScriptAnalyzer checks.
+- Finalized raw-exports-first design for MVP.
+
 ## [0.2.0] - 2025-08-25
 ### Fixed
 - Resolved all PSScriptAnalyzer warnings, including fixing trailing whitespace and ensuring the use of named parameters for `Join-Path` in `scripts/export-entra_role_assignments.ps1`.
