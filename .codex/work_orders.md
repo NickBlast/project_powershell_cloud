@@ -8,6 +8,289 @@ Repository:
 Each work order is self-contained and should not modify areas owned by another work order unless explicitly stated.
 
 ---
+```markdown
+# WO-PR-RULES-000 — Establish Pull Request, Branching, and Change Governance Rules
+
+## Context
+
+To keep this repository maintainable, reviewable, and safe for incremental development, we need strict, explicit rules for:
+
+- Pull Request (PR) size  
+- PR scope  
+- Branch structure  
+- Commit hygiene  
+- Reviewability  
+- Documentation alignment  
+- Expected behavior for automated agents (including Codex)  
+
+These rules must be fully codified into the repo’s governance files so every AI agent and every human contributor follows the same standards.
+
+This work order updates:
+- `ai_project_rules.md`
+- `repo_contract.md`
+- Adds or updates `CONTRIBUTING.md`
+- Creates `.github/pull_request_template.md`
+
+No code behavior changes should occur during this PR.
+
+---
+
+## Objective
+
+Implement clear, authoritative PR and workflow rules based on best practices from:
+
+- Google Engineering Practices (Small CLs)
+- GitHub Engineering Playbook
+- Microsoft ALM Guidelines
+- ThoughtWorks / Continuous Delivery
+- Martin Fowler (Refactoring / Branching Strategy)
+
+The rules should enforce:
+
+- Small, focused, cohesive PRs  
+- One Work Order = One PR  
+- Minimal diff size  
+- Clear commit grouping  
+- Predictable agent behavior  
+- Easy debugging and traceability  
+
+The result should dramatically reduce risk and simplify maintenance.
+
+---
+
+## Tasks
+
+### 1. Update `ai_project_rules.md`
+
+Add a **new top-level section** titled **“Pull Request & Change Workflow Rules”** that defines:
+
+#### PR Size Rules
+- PRs must be **as small as reasonably possible**, target **< 200 lines changed**.
+- Reviewable in **< 20 minutes**.
+- If a PR becomes too large, it must be split before submission.
+
+#### PR Scope Rules
+- **One Work Order = One PR**.  
+- PR must have **one intent** and modify only the files required for that intent.
+- No mixing:
+  - Refactors + behavior changes  
+  - Cleanup + feature work  
+  - Logging + export logic  
+  - Multiple unrelated fixes  
+  - Documentation revamps + code updates  
+
+#### Branching Rules
+- One branch per work order.
+- Branch naming:
+  - `wo-<ID>-short-description`  
+  - Example: `wo-logging-001-central-logging`
+
+#### Commit Hygiene
+- Commits must be:
+  - Small  
+  - Logically grouped  
+  - No drive-by changes  
+  - No commented-out code left behind  
+
+Recommended commit structure:
+1. Deletes/moves  
+2. Documentation updates  
+3. Logic updates  
+4. Final polish  
+
+#### Review Rules
+- PR description must include:
+  - Work Order ID  
+  - “This PR Does:”  
+  - “This PR Does NOT Do:”  
+  - Summary of files touched  
+  - Testing performed  
+
+- PR must be understandable top-to-bottom without external context.
+
+#### Documentation Alignment
+If a PR changes behavior or expectations, the contributor must:
+
+- Update README
+- Update relevant `/docs/` files
+- Update `todo.md` (checking off tasks)
+
+#### Safety Rules
+- No stealth changes.
+- No mixed concerns.
+- No hidden dependency updates.
+- No formatting + logic changes in the same commit.
+- All new behavior must be explicitly described.
+
+Codex MUST follow these rules for all future PRs.
+
+---
+
+### 2. Update `repo_contract.md`
+
+Codex should insert or update a section titled **“Repository Workflow Contract”** with:
+
+- A clear commitment to:
+  - Small PRs  
+  - One-Work-Order-per-PR  
+  - Minimal diff surfaces  
+  - Strict branching boundaries  
+  - PR template usage  
+- A requirement that all automated agents follow the Pull Request Rules from `ai_project_rules.md`.
+
+This ensures the repo governance and AI rules match.
+
+---
+
+### 3. Create or Update `CONTRIBUTING.md`
+
+Codex should create `CONTRIBUTING.md` at the repo root if it doesn’t exist.
+
+The file must contain:
+
+## CONTRIBUTING.md (Example for Codex to implement)
+
+```
+
+# Contributing Guidelines
+
+This repository uses a strict, minimal, Work-Order-driven workflow.
+
+## Branching
+
+* One Work Order = One PR = One Branch
+* Branch naming:
+
+  * `wo-<ID>-short-description`
+  * Example: `wo-schema-001-remove-schema-files`
+
+## Pull Requests
+
+* PR MUST reference its Work Order ID in the title.
+* PR MUST contain only one logical change.
+* PR MUST follow the PR template.
+* Keep PRs under ~200 changed lines whenever possible.
+* Commits must be small and logical:
+
+  * File removal/moves
+  * Documentation updates
+  * Logic modifications
+  * Final polish
+
+## Review Expectations
+
+* PR must be readable in under 20 minutes.
+* No “stealth changes.”
+* No mixing:
+
+  * Cleanup + feature work
+  * Logging + logic changes
+  * Schema + export modifications
+
+## Documentation
+
+If a PR affects behavior:
+
+* Update README
+* Update `/docs/`
+* Update `todo.md` (mark relevant tasks complete)
+
+## Testing
+
+Every PR must be runnable in isolation.
+
+```
+
+Codex should generate this exact structure unless minor adjustments are required.
+
+---
+
+### 4. Create `.github/pull_request_template.md`
+
+Codex should create the file:
+
+**`.github/pull_request_template.md`**
+
+With this exact content:
+
+```
+
+## Work Order
+
+<!-- Example: WO-LOGGING-001 -->
+
+## This PR Does
+
+* …
+
+## This PR Does NOT Do
+
+* …
+
+## Files Touched
+
+* …
+
+## Testing Performed
+
+* …
+
+## Notes for Reviewers
+
+* Keep PRs small, single-purpose, and aligned with the Work Order.
+
+```
+
+This template ensures all PRs provide clear, auditable scope.
+
+---
+
+### 5. Update README (if needed)
+
+Codex should add a short section titled **“Pull Request Philosophy”** summarizing:
+
+- Small PRs  
+- One Work Order per PR  
+- Branch-per-work-order workflow  
+- PR template usage  
+- No mixed concerns  
+
+Keep this section at the bottom of README to avoid overwhelming new users.
+
+---
+
+## Constraints
+
+- This PR must ONLY modify:
+  - `ai_project_rules.md`
+  - `repo_contract.md`
+  - `CONTRIBUTING.md`
+  - `.github/pull_request_template.md`
+  - README (only to add PR philosophy section)
+
+- NO changes to:
+  - Scripts
+  - Modules
+  - Schemas
+  - Logging
+  - Export functionality
+
+- This PR must be completely non-functional and documentation-only.
+
+---
+
+## Expected Outcomes
+
+After this PR:
+
+- All governance files define small, focused, strict PR rules.
+- Codex and any agent now operate with predictable, safe workflows.
+- The repo becomes simpler to maintain, debug, and evolve.
+- Future PRs become dramatically easier to understand and review.
+- The entire development workflow becomes incremental and low-risk.
+
+```
+---
 
 # WO-SCHEMA-001 — Remove all schema assets and scrub schema references from documentation & rules
 
