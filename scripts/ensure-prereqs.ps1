@@ -337,7 +337,7 @@ Write-Step "`n[OK] Prerequisite check completed successfully."
 
 }
 
-$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -Quiet:$Quiet -WhatIf:$WhatIfPreference }
+$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -Quiet:$Quiet }
 
 if ($runResult.Succeeded) {
     Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
