@@ -8,19 +8,17 @@
 - Completed WO-PR-RULES-000 by codifying small-PR and branch-per-work-order workflows, updating CONTRIBUTING, adding a PR template, and documenting PR philosophy in README and governance docs.
 - Renamed the tenant connection module to `modules/entra_connection/entra_connection.psm1`, refreshed its Microsoft Entra documentation, and updated every script/doc import along with SecretManagement/Connect-* patterns that follow current Microsoft guidance.
 - Updated `scripts/ensure-prereqs.ps1`, README, and contract docs to treat module versions as minimums, ensure Microsoft.Graph.Entra is installed, and avoid downgrading newer Az/Graph bits.
+- Completed WO-SCHEMA-001 — Remove all schema assets and scrub schema references:
+  - Completed removal of all schema JSON assets and legacy schema helpers.
+  - Updated README, repo_contract, AGENTS, standards, runbooks, and AI rules to reflect schema as a future-phase requirement.
+  - Ensured all export modules run without schema dependencies.
+  - Verified module syntax, corrected invalid comment-based help, and passed ScriptAnalyzer checks.
+  - Finalized raw-exports-first design for MVP.
 
 ### Fixed
 - Hardened `scripts/ensure-prereqs.ps1` to pin PSResourceGet/PSGallery module versions, respect Quiet/WhatIf, normalize PSModulePath, and fail when PSScriptAnalyzer warnings or errors are detected.
 - Reworked the analyzer phase in `scripts/ensure-prereqs.ps1` to enumerate PowerShell files explicitly and skip generated folders, eliminating the intermittent `Invoke-ScriptAnalyzer` null-reference failure.
 - Ensured analyzer targets are passed as a strongly typed `string[]` list so `Invoke-ScriptAnalyzer` no longer receives `System.Object[]` and fails parameter binding.
-
-### WO-SCHEMA-001 — Remove all schema assets and scrub schema references
-
-- Completed removal of all schema JSON assets and legacy schema helpers.
-- Updated README, repo_contract, AGENTS, standards, runbooks, and AI rules to reflect schema as a future-phase requirement.
-- Ensured all export modules run without schema dependencies.
-- Verified module syntax, corrected invalid comment-based help, and passed ScriptAnalyzer checks.
-- Finalized raw-exports-first design for MVP.
 
 ## [0.2.0] - 2025-08-25
 ### Fixed

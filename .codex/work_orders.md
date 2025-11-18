@@ -254,7 +254,6 @@ Use this file as the single backlog. Keep entries actionable and remove them as 
 
 The detailed implementation instructions for these items live in `.codex/work_orders.md`.
 
-- `WO-SCHEMA-001` – Remove schema folders and scrub schema references.
 - `WO-LOGGING-001` – Add central run logging for all scripts.
 - `WO-AUDIT-001` – Merge audit_notes into changelog and todo.
 - `WO-AI-001` – Remove tooling references from scripts and modules.
