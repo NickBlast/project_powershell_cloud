@@ -9,53 +9,6 @@ Each work order is self-contained and should not modify areas owned by another w
 
 ---
 
-# WO-AUDIT-001 — Merge `audit_notes` into `CHANGELOG.md` and `todo.md`
-
-## Context
-
-`audit_notes` contains mixed historical notes and active tasks.  
-These must be consolidated cleanly.
-
----
-
-## Objective
-
-Eliminate `audit_notes` by merging:
-
-- Completed/historical items → `CHANGELOG.md`
-- Active tasks → `todo.md`
-
----
-
-## Tasks
-
-1. Review each file under `audit_notes/`.
-2. Categorize each note:
-   - Completed
-   - Active/future
-   - Ambiguous
-3. Add completed items to `CHANGELOG.md`.
-4. Add active tasks to `todo.md` under the correct area/category.
-5. Add ambiguous items to `todo.md` with a “clarify status” note.
-6. Remove the `audit_notes` directory.
-7. Update any documentation referencing it.
-
----
-
-## Constraints
-
-- Maintain historical accuracy.
-- Do not fabricate dates or completions.
-
----
-
-## Expected Outcomes
-
-- `audit_notes` deleted.
-- All content represented in `CHANGELOG.md` or `todo.md`.
-
----
-
 # WO-AI-001 — Remove AI/tooling references from scripts and modules
 
 ## Context

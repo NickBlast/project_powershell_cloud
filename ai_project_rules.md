@@ -7,7 +7,7 @@ _Last Updated: 2025-11-17_
 - Current phase is raw-export-first: keep `generated_at`, `tool_version`, and optional `dataset_version` metadata, but **do not** enforce schemas. Schema design/validation will return in a later phase.
 - Logging is mandatory: instrument scripts with `modules/logging` (`Write-StructuredLog`, correlation IDs, redaction) and store sanitized samples only under `examples/`, `logs/`, `reports/`, or `outputs/`.
 - Use SecretManagement for credentials, pin module versions via PSResourceGet, and document required permissions in `docs/compliance`.
-- Maintain the wave/micro-PR cadence by updating `todo.md`, `audit_notes/`, and `CHANGELOG.md` with problem, solution, validation evidence, data impact, and follow-ups. Call out schema considerations only when that future phase is reintroduced.
+- Maintain the wave/micro-PR cadence by updating `todo.md` and `CHANGELOG.md` with problem, solution, validation evidence, data impact, and follow-ups. Call out schema considerations only when that future phase is reintroduced.
 
 ## Pull Request & Change Workflow Rules
 - These rules apply to every contributor and **all automated agents (including Codex)**.
