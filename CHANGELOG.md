@@ -3,6 +3,7 @@
 ## [Unreleased] - 2025-11-17
 ### Added
 - Added `tests/entra_connection.Tests.ps1` to smoke-test module import, SecretManagement error handling, and the `ensure-prereqs.ps1` + `Connect-GraphContext` workflow without touching live tenants.
+- Added centralized run logging for all entrypoint scripts, writing timestamped logs under `logs/` with minimal console noise and consistent filenames.
 
 ### Changed
 - Completed WO-PR-RULES-000 by codifying small-PR and branch-per-work-order workflows, updating CONTRIBUTING, adding a PR template, and documenting PR philosophy in README and governance docs.

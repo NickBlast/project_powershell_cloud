@@ -52,6 +52,12 @@ Each exported dataset must include a minimal header with these top-level fields:
 
 Schema validation is paused while exports stabilize; schema definitions will be reintroduced in a future phase.
 
+## Logging
+
+- Every entrypoint script writes a run log to the root `logs/` directory using the pattern `YYYYMMDD-HHMMSS-<scriptname>-run.log`.
+- All standard output, errors, and verbose messages are captured in the log file so the console stays quiet.
+- On completion, scripts print a short status message that points to the relative log path for follow-up troubleshooting.
+
 ## Minimal troubleshooting
 
 - Authentication / Graph issues

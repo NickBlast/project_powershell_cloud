@@ -38,12 +38,17 @@ param(
     [Switch]$Quiet
 )
 
-#region Setup and Configuration
-# Establish strict runtime settings, version pins, and directories so every run behaves exactly the same.
-Set-StrictMode -Version 3.0
-$ErrorActionPreference = 'Stop'
-$VerbosePreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
-$InformationPreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
+$scriptName = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)
+
+Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
+
+function Invoke-ScriptMain {
+    #region Setup and Configuration
+    # Establish strict runtime settings, version pins, and directories so every run behaves exactly the same.
+    Set-StrictMode -Version 3.0
+    $ErrorActionPreference = 'Stop'
+    $VerbosePreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
+    $InformationPreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
 
 $requiredPSVersion = [Version]'7.4.0'
 $psResourceModuleName = 'Microsoft.PowerShell.PSResourceGet'
@@ -141,7 +146,7 @@ Write-Verbose "Detected version: $($PSVersionTable.PSVersion)"
 
 if ($PSVersionTable.PSVersion -lt $requiredPSVersion) {
     Write-Error "PowerShell version $($PSVersionTable.PSVersion) is not supported. Please upgrade to version $requiredPSVersion or higher."
-    exit 1
+    throw "PowerShell version $($PSVersionTable.PSVersion) is below the required $requiredPSVersion."
 }
 Write-Step "[OK] PowerShell version check passed."
 #endregion
@@ -168,7 +173,7 @@ try {
 }
 catch {
     Write-Error "Failed to find, install, or import $psResourceModuleName. $_"
-    exit 1
+    throw "Failed to find, install, or import $psResourceModuleName."
 }
 #endregion
 
@@ -203,7 +208,7 @@ foreach ($module in $requiredModules) {
         }
         catch {
             Write-Error "Failed to install $moduleName version $($module.MinimumVersion). $_"
-            exit 1
+            throw "Failed to install or update module $moduleName."
         }
     }
 }
@@ -253,7 +258,7 @@ try {
 }
 catch {
     Write-Error "Failed to enumerate files for ScriptAnalyzer. $_"
-    exit 1
+    throw "Prerequisite module validation failed."
 }
 
 [string[]]$analysisPaths = $analysisTargets |
@@ -280,7 +285,7 @@ else {
         }
         catch {
             Write-Error "Invoke-ScriptAnalyzer failed for '$analysisPath'. $_"
-            exit 1
+            throw "PSScriptAnalyzer encountered an error."
         }
     }
 }
@@ -319,8 +324,19 @@ if (-not $Quiet) {
 $blockingFindings = @($analyzerResults | Where-Object { $_.Severity -in @('Error', 'Warning') })
 if ($blockingFindings.Count -gt 0) {
     Write-Error "`nPSScriptAnalyzer found blocking issues (warnings are treated as errors). Please review the report and fix them."
-    exit 1
+    throw "PSScriptAnalyzer did not produce results."
 }
 
 Write-Step "`n[OK] Prerequisite check completed successfully."
 #endregion
+
+}
+
+$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain }
+
+if ($runResult.Succeeded) {
+    Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
+} else {
+    Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
+    throw "PSScriptAnalyzer found blocking issues (warnings are treated as errors)."
+}
