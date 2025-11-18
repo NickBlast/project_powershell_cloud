@@ -204,6 +204,62 @@ function Write-StructuredLog {
 
 <#
 .SYNOPSIS
+    Executes a scriptblock while capturing all output streams to a run log file.
+.DESCRIPTION
+    Generates a log file under the repository's logs directory using the pattern
+    `yyyyMMdd-HHmmss-<scriptname>-run.log`. All streams (Information, Verbose,
+    Warning, Error, Output, Debug) are redirected into the log file while the
+    console remains quiet. A hashtable is returned with success status and both
+    absolute and repository-relative log paths.
+.PARAMETER ScriptName
+    The name of the script being executed. This is used to name the log file.
+.PARAMETER ScriptBlock
+    The scriptblock containing the core script logic to execute.
+.OUTPUTS
+    [hashtable] with the keys: Succeeded (bool), LogPath (string), and
+    RelativeLogPath (string).
+#>
+function Invoke-WithRunLogging {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$ScriptName,
+        [Parameter(Mandatory = $true)][scriptblock]$ScriptBlock
+    )
+
+    $modulesRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..')).Path
+    $repoRoot = (Resolve-Path -Path (Join-Path -Path $modulesRoot -ChildPath '..')).Path
+    $logsRoot = Join-Path -Path $repoRoot -ChildPath 'logs'
+
+    if (-not (Test-Path -Path $logsRoot)) {
+        New-Item -ItemType Directory -Path $logsRoot -Force | Out-Null
+    }
+
+    $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $sanitizedName = [System.IO.Path]::GetFileNameWithoutExtension($ScriptName)
+    $logFileName = "$timestamp-$sanitizedName-run.log"
+    $logPath = Join-Path -Path $logsRoot -ChildPath $logFileName
+    $relativeLogPath = [System.IO.Path]::GetRelativePath($repoRoot, $logPath)
+
+    $logWriter = [System.IO.StreamWriter]::new($logPath, $false, [System.Text.Encoding]::UTF8)
+    try {
+        & $ScriptBlock 6>&1 5>&1 4>&1 3>&1 2>&1 |
+            Out-String -Stream |
+            ForEach-Object { $logWriter.WriteLine($_) }
+
+        return @{ Succeeded = $true; LogPath = $logPath; RelativeLogPath = $relativeLogPath }
+    }
+    catch {
+        $logWriter.WriteLine(($_ | Out-String))
+        return @{ Succeeded = $false; LogPath = $logPath; RelativeLogPath = $relativeLogPath }
+    }
+    finally {
+        $logWriter.Flush()
+        $logWriter.Dispose()
+    }
+}
+
+<#
+.SYNOPSIS
     Executes a scriptblock with a retry policy for transient errors.
 .DESCRIPTION
     Wraps a command or scriptblock, automatically retrying it upon failure.
@@ -345,6 +401,7 @@ Export-ModuleMember -Function @(
     'Set-LogRedactionPattern',
     'Write-StructuredLog',
     'Get-CorrelationId',
+    'Invoke-WithRunLogging',
     'Invoke-WithRetry',
     'Write-ExportLogStart',
     'Write-ExportLogResult'

@@ -13,25 +13,41 @@ param(
     [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'outputs/entra')
 )
 
-# Fail fast on any error to avoid silent data gaps.
-$ErrorActionPreference = 'Stop'
+$scriptName = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)
 
-# Import shared modules for connection handling, structured logging, and deterministic exports.
-Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -Force
 Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
+Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -Force
 Import-Module $PSScriptRoot/../modules/export/export.psd1 -Force
 
-# Dataset metadata used for consistent exports (schema validation is paused).
-$toolVersion = '0.3.0'
-$datasetName = 'entra_groups'
+function Invoke-ScriptMain {
+    param(
+        [string]$OutputPath
+    )
+    # Fail fast on any error to avoid silent data gaps.
+    $ErrorActionPreference = 'Stop'
 
-# Connect to the known tenant and log the start of the export pipeline.
-Write-StructuredLog -Level Info -Message 'Starting Entra cloud-only groups export.'
-$context = Connect-EntraTestTenant
+    # Dataset metadata used for consistent exports (schema validation is paused).
+    $toolVersion = '0.3.0'
+    $datasetName = 'entra_groups'
 
-# Query only cloud-only groups (no on-prem sync) and log the count for auditing.
-$groups = Invoke-WithRetry -ScriptBlock { Get-MgGroup -Filter "onPremisesSyncEnabled eq null" -All }
-Write-StructuredLog -Level Info -Message "Found $($groups.Count) cloud-only groups" -Context @{ dataset_name = $datasetName }
+    # Connect to the known tenant and log the start of the export pipeline.
+    Write-StructuredLog -Level Info -Message 'Starting Entra cloud-only groups export.'
+    $context = Connect-EntraTestTenant
 
-# Persist the dataset in CSV and JSON with standard headers.
-Write-Export -DatasetName $datasetName -Objects $groups -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion
+    # Query only cloud-only groups (no on-prem sync) and log the count for auditing.
+    $groups = Invoke-WithRetry -ScriptBlock { Get-MgGroup -Filter "onPremisesSyncEnabled eq null" -All }
+    Write-StructuredLog -Level Info -Message "Found $($groups.Count) cloud-only groups" -Context @{ dataset_name = $datasetName }
+
+    # Persist the dataset in CSV and JSON with standard headers.
+    Write-Export -DatasetName $datasetName -Objects $groups -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion
+}
+
+$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -OutputPath $OutputPath }
+
+if ($runResult.Succeeded) {
+    Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
+    exit 0
+} else {
+    Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
+    exit 1
+}

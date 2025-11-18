@@ -14,6 +14,7 @@
         'Set-LogRedactionPattern',
         'Write-StructuredLog',
         'Get-CorrelationId',
+        'Invoke-WithRunLogging',
         'Invoke-WithRetry',
         'Write-ExportLogStart',
         'Write-ExportLogResult'

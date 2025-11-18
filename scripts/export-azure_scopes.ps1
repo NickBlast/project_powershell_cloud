@@ -13,34 +13,50 @@ param(
     [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'outputs/azure')
 )
 
-# Abort on any error to avoid partial exports.
-$ErrorActionPreference = 'Stop'
+$scriptName = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)
 
-# Pull in shared modules for connectivity, logging, and export formatting.
-Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -Force
 Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
+Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -Force
 Import-Module $PSScriptRoot/../modules/export/export.psd1 -Force
 
-# Dataset metadata is stamped onto every file for audit tracking.
-$toolVersion = '0.3.0'
-$datasetName = 'azure_subscriptions'
+function Invoke-ScriptMain {
+    param(
+        [string]$OutputPath
+    )
+    # Abort on any error to avoid partial exports.
+    $ErrorActionPreference = 'Stop'
 
-# Connect to the known test tenant and log the start of the export.
-Write-StructuredLog -Level Info -Message 'Starting Azure subscription export.'
-$context = Connect-EntraTestTenant -ConnectAzure
+    # Dataset metadata is stamped onto every file for audit tracking.
+    $toolVersion = '0.3.0'
+    $datasetName = 'azure_subscriptions'
 
-# Fetch subscriptions and reshape to consistent columns for downstream processing.
-$subscriptions = Get-AzSubscription
-$records = foreach ($sub in $subscriptions) {
-    [pscustomobject]@{
-        subscription_id   = $sub.Id
-        subscription_name = $sub.Name
-        tenant_id         = $sub.TenantId
-        state             = $sub.State
+    # Connect to the known test tenant and log the start of the export.
+    Write-StructuredLog -Level Info -Message 'Starting Azure subscription export.'
+    $context = Connect-EntraTestTenant -ConnectAzure
+
+    # Fetch subscriptions and reshape to consistent columns for downstream processing.
+    $subscriptions = Get-AzSubscription
+    $records = foreach ($sub in $subscriptions) {
+        [pscustomobject]@{
+            subscription_id   = $sub.Id
+            subscription_name = $sub.Name
+            tenant_id         = $sub.TenantId
+            state             = $sub.State
+        }
     }
+
+    Write-StructuredLog -Level Info -Message "Captured $($records.Count) subscriptions" -Context @{ dataset_name = $datasetName }
+
+    # Persist the normalized dataset in CSV and JSON formats.
+    Write-Export -DatasetName $datasetName -Objects $records -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion
 }
 
-Write-StructuredLog -Level Info -Message "Captured $($records.Count) subscriptions" -Context @{ dataset_name = $datasetName }
+$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -OutputPath $OutputPath }
 
-# Persist the normalized dataset in CSV and JSON formats.
-Write-Export -DatasetName $datasetName -Objects $records -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion
+if ($runResult.Succeeded) {
+    Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
+    exit 0
+} else {
+    Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
+    exit 1
+}

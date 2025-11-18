@@ -13,25 +13,41 @@ param(
     [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'outputs/azure')
 )
 
-# Fail fast on any unexpected condition so exports do not silently drop data.
-$ErrorActionPreference = 'Stop'
+$scriptName = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)
 
-# Load shared modules for authentication, structured logging, and deterministic export formatting.
-Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -Force
 Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
+Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -Force
 Import-Module $PSScriptRoot/../modules/export/export.psd1 -Force
 
-# Dataset metadata is embedded in every output file for traceability.
-$toolVersion = '0.3.0'
-$datasetName = 'azure_role_assignments'
+function Invoke-ScriptMain {
+    param(
+        [string]$OutputPath
+    )
+    # Fail fast on any unexpected condition so exports do not silently drop data.
+    $ErrorActionPreference = 'Stop'
 
-# Connect to the known-good tenant to avoid accidental exports from the wrong directory.
-Write-StructuredLog -Level Info -Message 'Starting Azure RBAC assignment export.'
-$context = Connect-EntraTestTenant -ConnectAzure
+    # Dataset metadata is embedded in every output file for traceability.
+    $toolVersion = '0.3.0'
+    $datasetName = 'azure_role_assignments'
 
-# Query every role assignment visible to the signed-in principal.
-$assignments = Get-AzRoleAssignment
-Write-StructuredLog -Level Info -Message "Captured $($assignments.Count) role assignments" -Context @{ dataset_name = $datasetName }
+    # Connect to the known-good tenant to avoid accidental exports from the wrong directory.
+    Write-StructuredLog -Level Info -Message 'Starting Azure RBAC assignment export.'
+    $context = Connect-EntraTestTenant -ConnectAzure
 
-# Persist the dataset in CSV and JSON formats with standard metadata headers.
-Write-Export -DatasetName $datasetName -Objects $assignments -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion
+    # Query every role assignment visible to the signed-in principal.
+    $assignments = Get-AzRoleAssignment
+    Write-StructuredLog -Level Info -Message "Captured $($assignments.Count) role assignments" -Context @{ dataset_name = $datasetName }
+
+    # Persist the dataset in CSV and JSON formats with standard metadata headers.
+    Write-Export -DatasetName $datasetName -Objects $assignments -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion
+}
+
+$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -OutputPath $OutputPath }
+
+if ($runResult.Succeeded) {
+    Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
+    exit 0
+} else {
+    Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
+    exit 1
+}

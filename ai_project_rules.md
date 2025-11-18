@@ -59,6 +59,7 @@ _Last Updated: 2025-11-17_
   - Update README
   - Update relevant `/docs/` files
   - Update `todo.md` (mark relevant tasks complete)
+  - Remove completed Work Orders from `work_orders.md` (and `.codex/work_orders.md` when present) and clear completed tasks from `todo.md` so backlogs stay accurate when changes merge.
 
 ### Safety Rules
 - No stealth changes.

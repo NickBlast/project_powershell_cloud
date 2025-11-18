@@ -56,6 +56,8 @@ Other prompt banks (`.clinerules/`, `.gemini/`, `docs/prompts/`, `clinerules-ban
 ## 9. Work Tracking via `todo.md`
 - Treat `todo.md` as the authoritative backlog; add actionable checkboxes with owners or context.
 - Update status immediately after work completes or requirements change to keep other agents aligned.
+- When a Work Order is completed and merged, remove its section from `work_orders.md` (and `.codex/work_orders.md` if present) and add any needed summary to `CHANGELOG.md`.
+- Clear or remove tasks in `todo.md` that were completed in the same PR so the backlog remains accurate.
 
 ## 10. Project Rules & Learning Loop (`ai_project_rules.md`)
 - Capture project-specific behaviors (logging expectations, retries, tooling quirks, and future-phase schema notes) in `ai_project_rules.md`.

@@ -30,6 +30,8 @@ exports/
 
 # Logs and user-specific files
 *.log
+logs/
+!logs/.gitkeep
 *.user
 *.suo
 

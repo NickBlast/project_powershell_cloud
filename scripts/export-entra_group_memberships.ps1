@@ -13,38 +13,54 @@ param(
     [string]$OutputPath = (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'outputs/entra')
 )
 
-# Stop immediately on errors to avoid incomplete exports.
-$ErrorActionPreference = 'Stop'
+$scriptName = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)
 
-# Import reusable modules for authentication, structured logging, and export formatting.
-Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -Force
 Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
+Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -Force
 Import-Module $PSScriptRoot/../modules/export/export.psd1 -Force
 
-# Dataset metadata applied to all outputs for traceability.
-$toolVersion = '0.3.0'
-$datasetName = 'entra_group_memberships'
+function Invoke-ScriptMain {
+    param(
+        [string]$OutputPath
+    )
+    # Stop immediately on errors to avoid incomplete exports.
+    $ErrorActionPreference = 'Stop'
 
-# Connect to the curated tenant and log the start of the export.
-Write-StructuredLog -Level Info -Message 'Starting Entra group membership export.'
-$context = Connect-EntraTestTenant
+    # Dataset metadata applied to all outputs for traceability.
+    $toolVersion = '0.3.0'
+    $datasetName = 'entra_group_memberships'
 
-# Enumerate all groups, then drill into each group to collect its members.
-$groups = Invoke-WithRetry -ScriptBlock { Get-MgGroup -All }
-$relationships = @()
-foreach ($group in $groups) {
-    $members = Get-MgGroupMember -GroupId $group.Id -All -ErrorAction SilentlyContinue
-    foreach ($member in $members) {
-        $relationships += [pscustomobject]@{
-            group_id    = $group.Id
-            group_name  = $group.DisplayName
-            member_id   = $member.Id
-            member_type = $member.AdditionalProperties['@odata.type']
+    # Connect to the curated tenant and log the start of the export.
+    Write-StructuredLog -Level Info -Message 'Starting Entra group membership export.'
+    $context = Connect-EntraTestTenant
+
+    # Enumerate all groups, then drill into each group to collect its members.
+    $groups = Invoke-WithRetry -ScriptBlock { Get-MgGroup -All }
+    $relationships = @()
+    foreach ($group in $groups) {
+        $members = Get-MgGroupMember -GroupId $group.Id -All -ErrorAction SilentlyContinue
+        foreach ($member in $members) {
+            $relationships += [pscustomobject]@{
+                group_id    = $group.Id
+                group_name  = $group.DisplayName
+                member_id   = $member.Id
+                member_type = $member.AdditionalProperties['@odata.type']
+            }
         }
     }
+
+    Write-StructuredLog -Level Info -Message "Captured $($relationships.Count) memberships" -Context @{ dataset_name = $datasetName }
+
+    # Persist the flattened relationships in CSV and JSON formats with metadata headers.
+    Write-Export -DatasetName $datasetName -Objects $relationships -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion
 }
 
-Write-StructuredLog -Level Info -Message "Captured $($relationships.Count) memberships" -Context @{ dataset_name = $datasetName }
+$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -OutputPath $OutputPath }
 
-# Persist the flattened relationships in CSV and JSON formats with metadata headers.
-Write-Export -DatasetName $datasetName -Objects $relationships -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion
+if ($runResult.Succeeded) {
+    Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
+    exit 0
+} else {
+    Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
+    exit 1
+}
