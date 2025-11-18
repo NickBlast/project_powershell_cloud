@@ -20,6 +20,9 @@ Import-Module $PSScriptRoot/../modules/entra_connection/entra_connection.psd1 -F
 Import-Module $PSScriptRoot/../modules/export/export.psd1 -Force
 
 function Invoke-ScriptMain {
+    param(
+        [string]$OutputPath
+    )
     # Stop immediately on errors to avoid incomplete exports.
     $ErrorActionPreference = 'Stop'
 
@@ -52,10 +55,11 @@ function Invoke-ScriptMain {
     Write-Export -DatasetName $datasetName -Objects $relationships -OutputPath $OutputPath -Formats 'csv','json' -ToolVersion $toolVersion
 }
 
-$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain }
+$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -OutputPath $OutputPath }
 
 if ($runResult.Succeeded) {
     Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
+    exit 0
 } else {
     Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
     exit 1

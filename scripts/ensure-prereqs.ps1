@@ -44,7 +44,9 @@ Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
 
 function Invoke-ScriptMain {
     [CmdletBinding(SupportsShouldProcess = $true)]
-    param()
+    param(
+        [switch]$Quiet
+    )
 
     #region Setup and Configuration
     # Establish strict runtime settings, version pins, and directories so every run behaves exactly the same.
@@ -327,7 +329,7 @@ if (-not $Quiet) {
 $blockingFindings = @($analyzerResults | Where-Object { $_.Severity -in @('Error', 'Warning') })
 if ($blockingFindings.Count -gt 0) {
     Write-Error "`nPSScriptAnalyzer found blocking issues (warnings are treated as errors). Please review the report and fix them."
-    throw "PSScriptAnalyzer did not produce results."
+    throw "PSScriptAnalyzer found blocking issues (warnings are treated as errors)."
 }
 
 Write-Step "`n[OK] Prerequisite check completed successfully."
@@ -335,11 +337,12 @@ Write-Step "`n[OK] Prerequisite check completed successfully."
 
 }
 
-$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain }
+$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -Quiet:$Quiet -WhatIf:$WhatIfPreference }
 
 if ($runResult.Succeeded) {
     Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
+    exit 0
 } else {
     Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
-    throw "PSScriptAnalyzer found blocking issues (warnings are treated as errors)."
+    exit 1
 }

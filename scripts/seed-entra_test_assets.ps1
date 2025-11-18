@@ -130,6 +130,7 @@ $runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke
 
 if ($runResult.Succeeded) {
     Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
+    exit 0
 } else {
     Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
     exit 1
