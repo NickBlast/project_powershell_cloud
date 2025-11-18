@@ -43,6 +43,9 @@ $scriptName = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)
 Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
 
 function Invoke-ScriptMain {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param()
+
     #region Setup and Configuration
     # Establish strict runtime settings, version pins, and directories so every run behaves exactly the same.
     Set-StrictMode -Version 3.0
