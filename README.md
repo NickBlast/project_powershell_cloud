@@ -52,6 +52,13 @@ Each exported dataset must include a minimal header with these top-level fields:
 
 Schema validation is paused while exports stabilize; schema definitions will be reintroduced in a future phase.
 
+## Logging
+
+- Every script under `scripts/` now emits a run log under the repository `logs/` folder.
+- Log files follow the pattern `YYYYMMDD-HHMMSS-<scriptname>-run.log` so concurrent runs stay distinct.
+- All output streams (standard, error, verbose, information) are captured in the log file while console output is reduced to a single success/failure line pointing to the relative log path.
+- Inspect the corresponding log after any run to review verbose details or troubleshoot failures.
+
 ## Minimal troubleshooting
 
 - Authentication / Graph issues

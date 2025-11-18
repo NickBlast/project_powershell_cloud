@@ -21,6 +21,42 @@ $script:CorrelationId = [guid]::NewGuid().ToString()
 
 #region Private Helper Functions
 
+function Get-RepoRootPath {
+    [CmdletBinding()]
+    param()
+
+    return [System.IO.Path]::GetFullPath((Join-Path -Path $PSScriptRoot -ChildPath '../..'))
+}
+
+function New-RunLogPath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$ScriptName,
+        [string]$RepoRoot = (Get-RepoRootPath)
+    )
+
+    $logsRoot = Join-Path -Path $RepoRoot -ChildPath 'logs'
+    if (-not (Test-Path -Path $logsRoot)) {
+        New-Item -Path $logsRoot -ItemType Directory -Force | Out-Null
+    }
+
+    $timestamp = (Get-Date).ToString('yyyyMMdd-HHmmss')
+    $safeScriptName = [System.IO.Path]::GetFileNameWithoutExtension($ScriptName)
+    $logFileName = "$timestamp-$safeScriptName-run.log"
+
+    return Join-Path -Path $logsRoot -ChildPath $logFileName
+}
+
+function Get-RelativePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$From,
+        [Parameter(Mandatory = $true)][string]$To
+    )
+
+    return [System.IO.Path]::GetRelativePath($From, $To)
+}
+
 function Protect-String {
     param(
         [string]$InputString
@@ -274,6 +310,56 @@ function Invoke-WithRetry {
     }
 }
 
+<#+
+.SYNOPSIS
+    Executes a scriptblock and captures all output to a timestamped log file under logs/.
+.DESCRIPTION
+    Wraps execution of a scriptblock with unified run logging so stdout, stderr, verbose, and
+    information streams are redirected to a single log file. Console output remains minimal,
+    emitting only a success or failure message that points to the generated log path.
+.PARAMETER ScriptBlock
+    The scriptblock containing the script's primary logic.
+.PARAMETER ScriptName
+    The script file name used when generating the log file name.
+.PARAMETER RepoRoot
+    Optional repository root path. Defaults to the detected root relative to the logging module.
+.OUTPUTS
+    [string] The absolute path to the generated log file.
+.#>
+function Invoke-WithRunLog {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][scriptblock]$ScriptBlock,
+        [Parameter(Mandatory = $true)][string]$ScriptName,
+        [string]$RepoRoot = (Get-RepoRootPath)
+    )
+
+    $logPath = New-RunLogPath -ScriptName $ScriptName -RepoRoot $RepoRoot
+    $relativeLogPath = Get-RelativePath -From $RepoRoot -To $logPath
+
+    $originalWhatIfPreference = $WhatIfPreference
+    $WhatIfPreference = $false
+
+    if (-not (Test-Path -Path $logPath)) {
+        New-Item -Path $logPath -ItemType File -Force | Out-Null
+    }
+
+    try {
+        & $ScriptBlock *>> $logPath
+        Write-Output "Execution complete. Log: $relativeLogPath"
+    }
+    catch {
+        $_ | Out-File -FilePath $logPath -Append
+        Write-Output "Errors detected. Check log: $relativeLogPath"
+        exit 1
+    }
+    finally {
+        $WhatIfPreference = $originalWhatIfPreference
+    }
+
+    return $logPath
+}
+
 function Write-ExportLogStart {
     [CmdletBinding()]
     param(
@@ -346,6 +432,7 @@ Export-ModuleMember -Function @(
     'Write-StructuredLog',
     'Get-CorrelationId',
     'Invoke-WithRetry',
+    'Invoke-WithRunLog',
     'Write-ExportLogStart',
     'Write-ExportLogResult'
 )

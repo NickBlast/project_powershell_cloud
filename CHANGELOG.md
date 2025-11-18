@@ -3,6 +3,7 @@
 ## [Unreleased] - 2025-11-17
 ### Added
 - Added `tests/entra_connection.Tests.ps1` to smoke-test module import, SecretManagement error handling, and the `ensure-prereqs.ps1` + `Connect-GraphContext` workflow without touching live tenants.
+- Introduced centralized run logging for all entrypoint scripts, emitting timestamped log files under `logs/`.
 
 ### Changed
 - Completed WO-PR-RULES-000 by codifying small-PR and branch-per-work-order workflows, updating CONTRIBUTING, adding a PR template, and documenting PR philosophy in README and governance docs.
@@ -14,6 +15,7 @@
   - Ensured all export modules run without schema dependencies.
   - Verified module syntax, corrected invalid comment-based help, and passed ScriptAnalyzer checks.
   - Finalized raw-exports-first design for MVP.
+- Documented cleanup expectations for AI agents to update work orders and todo backlogs when tasks complete.
 
 ### Fixed
 - Hardened `scripts/ensure-prereqs.ps1` to pin PSResourceGet/PSGallery module versions, respect Quiet/WhatIf, normalize PSModulePath, and fail when PSScriptAnalyzer warnings or errors are detected.

@@ -1,5 +1,5 @@
 # AI Project Rules
-_Last Updated: 2025-11-17_
+_Last Updated: 2025-11-18_
 
 ## General Principles
 - Anchor every task to `AGENTS.md` plus the repo contract/design docs; implement exclusively in PowerShell 7.4+ with `lower_case_with_underscores` directories and approved Verb-Noun naming.
@@ -8,6 +8,7 @@ _Last Updated: 2025-11-17_
 - Logging is mandatory: instrument scripts with `modules/logging` (`Write-StructuredLog`, correlation IDs, redaction) and store sanitized samples only under `examples/`, `logs/`, `reports/`, or `outputs/`.
 - Use SecretManagement for credentials, pin module versions via PSResourceGet, and document required permissions in `docs/compliance`.
 - Maintain the wave/micro-PR cadence by updating `todo.md`, `audit_notes/`, and `CHANGELOG.md` with problem, solution, validation evidence, data impact, and follow-ups. Call out schema considerations only when that future phase is reintroduced.
+- Backlog hygiene is mandatory: when a Work Order is completed, remove it from `work_orders.md` (and `.codex/work_orders.md` when present) and add any notable summary to `CHANGELOG.md`; remove or mark done any tasks finished in `todo.md` so it remains the single accurate backlog.
 
 ## Pull Request & Change Workflow Rules
 - These rules apply to every contributor and **all automated agents (including Codex)**.

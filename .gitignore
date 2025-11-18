@@ -29,6 +29,8 @@ exports/
 /.pshistory
 
 # Logs and user-specific files
+logs/
+!logs/.gitkeep
 *.log
 *.user
 *.suo

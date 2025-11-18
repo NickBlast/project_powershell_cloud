@@ -15,6 +15,7 @@
         'Write-StructuredLog',
         'Get-CorrelationId',
         'Invoke-WithRetry',
+        'Invoke-WithRunLog',
         'Write-ExportLogStart',
         'Write-ExportLogResult'
     )
