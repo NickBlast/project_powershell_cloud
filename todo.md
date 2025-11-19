@@ -150,7 +150,7 @@ Detailed implementation guidance currently lives in `.codex/work_orders.md` for 
 
 - [ ] [BUG][MODULES][P1] Validate environment variable handling and default tenant resolution in a work tenant.
 - [ ] [ENH][MODULES][P2] Improve error clarity when authentication fails or required configuration is missing.
-- [ ] [DOC][LOGGING][P2] Document how the module integrates with centralized logging to expose tenant metadata.
+- [ ] [DOC][MODULES][P2] Document how the module integrates with centralized logging to expose tenant metadata.
 
 ### modules/export/Export.psm1
 
