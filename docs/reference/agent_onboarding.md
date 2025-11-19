@@ -37,7 +37,7 @@ Review the following before doing any work:
     The command-let catalog for this repository with columns: `Cmdlet, Module, Synopsis, Parameters (comma-separated), Official Documentation URL`.
 
 - **Context and change history**
-  - `audit_notes/` folder (per-wave notes and final summary)
+  - `CHANGELOG.md` and `todo.md` (per-wave history, follow-ups, and backlog)
 
 ---
 
@@ -64,8 +64,8 @@ Before starting any task, update your **local** agent file to reflect the curren
    Branch naming pattern; Conventional Commit format; pull request template; merge policy.
 6. **Analyzer and Naming Requirements**  
    Treat PowerShell Script Analyzer findings as **errors**. Enforce Verb-Noun with **approved verbs**. Apply the repository’s variable naming convention.
-7. **Last Run Snapshot**  
-   Date and time (Coordinated Universal Time), current wave, completed waves, open follow-ups, and links to the latest `audit_notes/` entries.
+7. **Last Run Snapshot**
+   Date and time (Coordinated Universal Time), current wave, completed waves, open follow-ups, and links to the latest `CHANGELOG.md` and `todo.md` entries.
 8. **Change Log (Documentation)**  
    A short human-readable history of changes to this local file.
 
@@ -104,36 +104,36 @@ Before starting any task, update your **local** agent file to reflect the curren
 
 **Stop after every wave for review and approval**. If a wave would exceed the caps below, split it into sub-waves.
 
-- **Wave 0 — Environment and Documentation Bootstrap (lightweight)**  
-  Create or refresh this file and the four standards files in Section 2 if needed.  
-  Artifact: `audit_notes/wave0_env.md`.
+- **Wave 0 — Environment and Documentation Bootstrap (lightweight)**
+  Create or refresh this file and the four standards files in Section 2 if needed.
+  Artifact tracking: record outcomes in `CHANGELOG.md` and backlog items in `todo.md`.
 
-- **Wave 1 — Inventory and Mapping**  
-  Enumerate scripts, modules, exported functions. Draft `docs/command_appendix.csv`.  
-  Artifact: `audit_notes/wave1_inventory.md`.
+- **Wave 1 — Inventory and Mapping**
+  Enumerate scripts, modules, exported functions. Draft `docs/command_appendix.csv`.
+  Artifact tracking: record outcomes in `CHANGELOG.md` and backlog items in `todo.md`.
 
-- **Wave 2 — Command-let Reality Fixes**  
-  Replace non-existent, deprecated, or misspelled command-lets. Update official documentation links.  
-  Artifact: `audit_notes/wave2_cmdlet_fixes.md`.
+- **Wave 2 — Command-let Reality Fixes**
+  Replace non-existent, deprecated, or misspelled command-lets. Update official documentation links.
+  Artifact tracking: record outcomes in `CHANGELOG.md` and backlog items in `todo.md`.
 
-- **Wave 3 — Static Analysis Remediation**  
-  Run PowerShell Script Analyzer; treat warnings as errors. Fix findings including approved verbs, ShouldProcess usage, help, and compatibility.  
-  Artifact: `audit_notes/wave3_analyzer.md` with the analyzer report.
+- **Wave 3 — Static Analysis Remediation**
+  Run PowerShell Script Analyzer; treat warnings as errors. Fix findings including approved verbs, ShouldProcess usage, help, and compatibility.
+  Artifact tracking: record outcomes in `CHANGELOG.md` and backlog items in `todo.md`.
 
-- **Wave 4 — Naming and Variables**  
-  Enforce Verb-Noun with approved verbs. Normalize variable naming to repository standard. Provide a migration note for any exported rename.  
-  Artifact: `audit_notes/wave4_naming.md`.
+- **Wave 4 — Naming and Variables**
+  Enforce Verb-Noun with approved verbs. Normalize variable naming to repository standard. Provide a migration note for any exported rename.
+  Artifact tracking: record outcomes in `CHANGELOG.md` and backlog items in `todo.md`.
 
-- **Wave 5 — Help Authoring**  
-  Ensure comment-based help for all exported functions or generate as external help; refresh module help outputs.  
-  Artifact: `audit_notes/wave5_help.md`.
+- **Wave 5 — Help Authoring**
+  Ensure comment-based help for all exported functions or generate as external help; refresh module help outputs.
+  Artifact tracking: record outcomes in `CHANGELOG.md` and backlog items in `todo.md`.
 
-- **Wave 6 — Documentation Refresh**  
-  Update `README.md` and `CHANGELOG.md`. Finalize `docs/command_appendix.csv`.  
-  Artifact: `audit_notes/wave6_docs.md`.
+- **Wave 6 — Documentation Refresh**
+  Update `README.md` and `CHANGELOG.md`. Finalize `docs/command_appendix.csv`.
+  Artifact tracking: record outcomes in `CHANGELOG.md` and backlog items in `todo.md`.
 
-- **Wave 7 — Final Assembly**  
-  Curate commits and open a clean pull request with a one-page summary at `audit_notes/final_summary.md`.
+- **Wave 7 — Final Assembly**
+  Curate commits and open a clean pull request with a one-page summary recorded in `CHANGELOG.md` and any follow-ups in `todo.md`.
 
 **Caps per wave:** at most **25 files** or **600 changed lines**.
 
@@ -154,12 +154,12 @@ Before starting any task, update your **local** agent file to reflect the curren
   Use `BREAKING CHANGE:` footer when applicable.
 
 - **Pull request template (include in description)**
-  - **Scope** — what this wave covers  
-  - **Changes** — concise bullets of notable diffs  
-  - **Checks** — analyzer status, command appendix links validated, help present, documentation updated  
-  - **Risks and trade-offs** — deprecations, renames, compatibility notes  
-  - **Follow-ups** — items queued for next wave  
-  - **Artifacts** — link to `audit_notes/waveN_*.md`
+  - **Scope** — what this wave covers
+  - **Changes** — concise bullets of notable diffs
+  - **Checks** — analyzer status, command appendix links validated, help present, documentation updated
+  - **Risks and trade-offs** — deprecations, renames, compatibility notes
+  - **Follow-ups** — items queued for next wave
+  - **Artifacts** — link to relevant `CHANGELOG.md` sections and `todo.md` entries
 
 - **Merge policy**  
   Use **Squash and merge** per wave unless preserving history is explicitly required.
@@ -173,7 +173,7 @@ Before starting any task, update your **local** agent file to reflect the curren
 - Naming conforms (Verb-Noun with approved verbs). Variable naming is consistent to repository standard.
 - Exported functions include valid help.
 - `README.md`, `CHANGELOG.md`, standards files, and the Command Appendix are current and coherent.
-- Each wave has a corresponding note in `audit_notes/`.
+- Each wave has a corresponding note in `CHANGELOG.md`, with open follow-ups tracked in `todo.md`.
 
 ---
 

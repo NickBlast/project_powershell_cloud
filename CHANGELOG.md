@@ -4,6 +4,7 @@
 ### Added
 - Added `tests/entra_connection.Tests.ps1` to smoke-test module import, SecretManagement error handling, and the `ensure-prereqs.ps1` + `Connect-GraphContext` workflow without touching live tenants.
 - Added centralized run logging for all entrypoint scripts, writing timestamped logs under `logs/` with minimal console noise and consistent filenames.
+- Documented the Entra/Azure testing workflow refresh, including new `Connect-EntraTestTenant` helpers, seeding script (`scripts/seed-entra_test_assets.ps1`), and `tests/run-tests-basic.ps1` for smoke coverage with outputs under `outputs/entra` and `outputs/azure`.
 
 ### Changed
 - Completed WO-PR-RULES-000 by codifying small-PR and branch-per-work-order workflows, updating CONTRIBUTING, adding a PR template, and documenting PR philosophy in README and governance docs.
@@ -15,6 +16,17 @@
   - Ensured all export modules run without schema dependencies.
   - Verified module syntax, corrected invalid comment-based help, and passed ScriptAnalyzer checks.
   - Finalized raw-exports-first design for MVP.
+- Completed WO-AUDIT-001 by migrating `audit_notes` into long-term records, removing the folder, and recording wave outcomes and follow-ups in `CHANGELOG.md` and `todo.md`:
+  - Wave 0 established a reference cache (sources of record, standards, analyzer ruleset, help authoring guidance) with a read-only posture and an MCP client proposal.
+  - Wave 1 captured the initial inventory/mapping by enumerating scripts/modules/functions, drafting the command appendix, and logging follow-up questions for the appendix extraction.
+  - Wave 2 validated cmdlet usage, cleaned the command appendix (removing false positives, adding module family context), and updated README dependencies while flagging a device-code parameter verification follow-up.
+  - Wave 3 resolved all PSScriptAnalyzer findings, including trailing whitespace and positional parameter fixes in `scripts/export-entra_role_assignments.ps1`.
+  - Wave 4 confirmed function and variable naming already aligned with `Verb-Noun` and casing standards, requiring no renames.
+  - Wave 5 expanded comment-based help across `entra_connection`, `Export`, and `Logging` modules with `.OUTPUTS`/`.NOTES` additions and typo fixes.
+  - Wave 6 finalized `docs/command_appendix.csv` Learn URLs and documented the wave results in the changelog.
+  - Wave 7 hardened `scripts/ensure-prereqs.ps1` with deterministic module pins, quiet/WhatIf-aware logging, analyzer output exports, and typed analyzer target lists.
+  - Wave 8 completed the `entra_connection` rename/refactor, aligned Azure/Graph connection flows with updated guidance, expanded prereq coverage, and added Pester smoke tests.
+  - The final audit summary captures improved code quality, consistent naming, and complete documentation aligned to financial-grade standards.
 
 ### Fixed
 - Hardened `scripts/ensure-prereqs.ps1` to pin PSResourceGet/PSGallery module versions, respect Quiet/WhatIf, normalize PSModulePath, and fail when PSScriptAnalyzer warnings or errors are detected.
