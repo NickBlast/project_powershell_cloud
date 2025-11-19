@@ -45,10 +45,22 @@ Detailed implementation guidance currently lives in `.codex/work_orders.md` for 
 - [ ] [DOC][DOCS][P1] Review `docs/` (reference, runbooks, governance) for outdated statements or gaps, focusing on documentation rules now that AI references were removed.
 - [ ] [DOC][DOCS][P2] Decide whether module help should move fully to PlatyPS or stay hybrid inline/external and document the decision.
 - [ ] [META][DOCS][P2] Identify any additional domains to allowlist for `fetch-ro` beyond Microsoft Learn and official GitHub sources.
-- [ ] [DOC][DOCS][P1] Verify the Wave 1 inventory appendix coverage:
-  - Scripts: `scripts/ensure-prereqs.ps1`, `scripts/export-azure_rbac_assignments.ps1`, `scripts/export-azure_rbac_definitions.ps1`, `scripts/export-azure_scopes.ps1`, `scripts/export-entra_apps_service_principals.ps1`, `scripts/export-entra_directory_roles.ps1`, `scripts/export-entra_group_memberships.ps1`, `scripts/export-entra_groups_cloud_only.ps1`, `scripts/export-entra_role_assignments.ps1`.
-  - Modules: `modules/entra_connection/entra_connection.psm1`, `modules/export/Export.psm1`, `modules/logging/Logging.psm1`.
-  - Cmdlets: Confirm extracted commands remain listed in the command appendix.
+- [ ] [DOC][DOCS][P1] Verify the Wave 1 inventory appendix covers:
+  - **Scripts:**
+    - `scripts/ensure-prereqs.ps1`
+    - `scripts/export-azure_rbac_assignments.ps1`
+    - `scripts/export-azure_rbac_definitions.ps1`
+    - `scripts/export-azure_scopes.ps1`
+    - `scripts/export-entra_apps_service_principals.ps1`
+    - `scripts/export-entra_directory_roles.ps1`
+    - `scripts/export-entra_group_memberships.ps1`
+    - `scripts/export-entra_groups_cloud_only.ps1`
+    - `scripts/export-entra_role_assignments.ps1`
+  - **Modules:**
+    - `modules/entra_connection/entra_connection.psm1`
+    - `modules/export/Export.psm1`
+    - `modules/logging/Logging.psm1`
+  - **Cmdlets:** Ensure extracted commands remain listed in the command appendix.
 - [ ] [DOC][DOCS][P1] Re-verify `Connect-AzAccount -UseDeviceAuthentication` guidance on Microsoft Learn and update docs or appendices as required.
 
 ### EXPORTS
@@ -76,7 +88,7 @@ Detailed implementation guidance currently lives in `.codex/work_orders.md` for 
 
 ### scripts/ensure-prereqs.ps1
 
-- [ ] [BUG][EXPORTS][P1] Run the script on a representative host to confirm prereq detection, PSResourceGet installs, and analyzer output persistence still work post–Wave 7.
+- [ ] [BUG][EXPORTS][P1] Run the script on a representative host to confirm prereq detection, PSResourceGet installs, and analyzer output persistence still work post-Wave 7.
 - [ ] [ENH][EXPORTS][P2] Improve user messaging and parameter handling so tenant and environment overrides do not require file edits.
 - [ ] [META][LOGGING][P2] Document and verify the logging emitted during prereq checks once centralized logging lands.
 
