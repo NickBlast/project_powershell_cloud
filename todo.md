@@ -1,6 +1,6 @@
 # Project Tasks
 
-Use this file as the single backlog. Keep entries actionable and remove them as soon as they are completed.
+Use this file as the single backlog for the repository. Keep entries actionable and remove them as soon as they are completed.
 
 ## Legend
 
@@ -24,7 +24,7 @@ Use this file as the single backlog. Keep entries actionable and remove them as 
 
 ## Work Orders Snapshot
 
-Detailed implementation guidance for these items lives in `.codex/work_orders.md`.
+Detailed implementation guidance currently lives in `.codex/work_orders.md` for `WO-AI-001` and `WO-TODO-001`. The summaries below will be expanded there as the work orders progress.
 
 - `WO-LOGGING-001` – Add central run logging for all scripts.
 - `WO-AUDIT-001` – Merge audit notes into changelog and todo.
@@ -35,8 +35,8 @@ Detailed implementation guidance for these items lives in `.codex/work_orders.md
 
 ### LOGGING
 
-- [ ] [META][LOGGING][P1] Implement centralized run logging so each script emits consistent metadata to `logs/` and `outputs/`.
-- [ ] [ENH][LOGGING][P2] Refine logging helpers to align with the consolidated capture pattern required by WO-LOGGING-001.
+- [ ] [META][LOGGING][P1] Implement centralized run logging so every entry point emits consistent metadata (dataset name, tenant label, correlation ID, tool version) to `logs/` and `outputs/`.
+- [ ] [ENH][LOGGING][P2] Refine logging helpers so scripts and modules emit the same correlation identifiers and payload structure required by WO-LOGGING-001.
 - [ ] [DOC][LOGGING][P2] Add log review and retention guidance to `README.md` once the central logger is in place.
 - [ ] [META][LOGGING][P2] Ensure Script Analyzer output persists to `examples/` after the Wave 7 prereq workflow updates.
 
@@ -45,7 +45,10 @@ Detailed implementation guidance for these items lives in `.codex/work_orders.md
 - [ ] [DOC][DOCS][P1] Review `docs/` (reference, runbooks, governance) for outdated statements or gaps, focusing on documentation rules now that AI references were removed.
 - [ ] [DOC][DOCS][P2] Decide whether module help should move fully to PlatyPS or stay hybrid inline/external and document the decision.
 - [ ] [META][DOCS][P2] Identify any additional domains to allowlist for `fetch-ro` beyond Microsoft Learn and official GitHub sources.
-- [ ] [DOC][DOCS][P1] Verify the Wave 1 inventory appendix covers scripts (`scripts/ensure-prereqs.ps1`, `scripts/export-azure_rbac_assignments.ps1`, `scripts/export-azure_rbac_definitions.ps1`, `scripts/export-azure_scopes.ps1`, `scripts/export-entra_apps_service_principals.ps1`, `scripts/export-entra_directory_roles.ps1`, `scripts/export-entra_group_memberships.ps1`, `scripts/export-entra_groups_cloud_only.ps1`, `scripts/export-entra_role_assignments.ps1`), modules (`modules/entra_connection/entra_connection.psm1`, `modules/export/Export.psm1`, `modules/logging/Logging.psm1`), and the extracted cmdlets in the command appendix.
+- [ ] [DOC][DOCS][P1] Verify the Wave 1 inventory appendix coverage:
+  - Scripts: `scripts/ensure-prereqs.ps1`, `scripts/export-azure_rbac_assignments.ps1`, `scripts/export-azure_rbac_definitions.ps1`, `scripts/export-azure_scopes.ps1`, `scripts/export-entra_apps_service_principals.ps1`, `scripts/export-entra_directory_roles.ps1`, `scripts/export-entra_group_memberships.ps1`, `scripts/export-entra_groups_cloud_only.ps1`, `scripts/export-entra_role_assignments.ps1`.
+  - Modules: `modules/entra_connection/entra_connection.psm1`, `modules/export/Export.psm1`, `modules/logging/Logging.psm1`.
+  - Cmdlets: Confirm extracted commands remain listed in the command appendix.
 - [ ] [DOC][DOCS][P1] Re-verify `Connect-AzAccount -UseDeviceAuthentication` guidance on Microsoft Learn and update docs or appendices as required.
 
 ### EXPORTS
@@ -76,6 +79,12 @@ Detailed implementation guidance for these items lives in `.codex/work_orders.md
 - [ ] [BUG][EXPORTS][P1] Run the script on a representative host to confirm prereq detection, PSResourceGet installs, and analyzer output persistence still work post–Wave 7.
 - [ ] [ENH][EXPORTS][P2] Improve user messaging and parameter handling so tenant and environment overrides do not require file edits.
 - [ ] [META][LOGGING][P2] Document and verify the logging emitted during prereq checks once centralized logging lands.
+
+### scripts/seed-entra_test_assets.ps1
+
+- [ ] [BUG][EXPORTS][P2] Validate the seeding workflow on a clean or demo tenant to confirm assets provision correctly and idempotently.
+- [ ] [ENH][EXPORTS][P2] Add a `-WhatIf`-style safety switch or equivalent guardrail to prevent accidental writes.
+- [ ] [META][LOGGING][P2] Confirm seeding and any rollback behavior emit the shared logging payload once centralized logging is available.
 
 ### scripts/export-azure_rbac_assignments.ps1
 
@@ -147,4 +156,4 @@ Detailed implementation guidance for these items lives in `.codex/work_orders.md
 
 - Every new task must include the `[TYPE][AREA][PRIORITY]` tags defined above.
 - Remove tasks immediately after they are completed so this backlog stays authoritative.
-- Keep this file free of explicit references to development tools or artificial intelligence assistants.
+- Keep this file focused on technical backlog items rather than tool-specific or assistant-specific notes.
