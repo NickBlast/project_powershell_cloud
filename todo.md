@@ -28,6 +28,9 @@ Use this file as the single backlog. Keep entries actionable, cite evidence when
   - Extracted cmdlets for the command appendix
   (clarify status).
 - [ ] Re-verify `Connect-AzAccount -UseDeviceAuthentication` guidance on Microsoft Learn and adjust docs/command appendix if required (clarify status).
+- [ ] Run `scripts/ensure-prereqs.ps1` against a target host to confirm prereq detection still succeeds after Wave 7 changes.
+- [ ] Confirm PSResourceGet 1.0.5 installs cleanly during the prereq run and captures the version pin in logs.
+- [ ] Ensure analyzer output persists to `examples/` as expected after the Wave 7 prereq workflow updates.
 
 ## SCHEMA-FUTURE
 - [ ] Reintroduce schema validation helpers and tests once datasets stabilize; include property/type enforcement when schemas return.
