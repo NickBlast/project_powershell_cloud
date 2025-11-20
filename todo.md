@@ -24,11 +24,10 @@ Use this file as the single backlog for the repository. Keep entries actionable 
 
 ## Work Orders Snapshot
 
-Detailed implementation guidance currently lives in `.codex/work_orders.md` for `WO-AI-001` and `WO-TODO-001`. The summaries below will be expanded there as the work orders progress.
+Detailed implementation guidance currently lives in `.codex/work_orders.md` for `WO-TODO-001`. The summaries below will be expanded there as the work orders progress.
 
 - `WO-LOGGING-001` – Add central run logging for all scripts.
 - `WO-AUDIT-001` – Merge audit notes into changelog and todo.
-- `WO-AI-001` – Remove tooling references from scripts and modules.
 - `WO-TODO-001` – Restructure todo.md with categories and per-script/module tasks.
 
 ## Tasks by Area

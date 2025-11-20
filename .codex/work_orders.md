@@ -9,58 +9,6 @@ Each work order is self-contained and should not modify areas owned by another w
 
 ---
 
-# WO-AI-001 — Remove AI/tooling references from scripts and modules
-
-## Context
-
-Scripts/modules will be copied into a corporate environment where AI references are not permitted.
-
----
-
-## Objective
-
-Remove all AI-related references from:
-
-- Scripts
-- Modules
-- Operator-facing documentation
-
-while keeping `.codex/`, `AGENTS.md`, and `ai_project_rules.md` intact (sandbox only).
-
----
-
-## Tasks
-
-1. Search under:
-   - `scripts/`
-   - `modules/`
-   - Doc files copied with scripts
-2. Remove references to:
-   - “Copilot”
-   - “Codex”
-   - “Cline”
-   - “ChatGPT”
-   - “AI assistant”
-3. Rewrite instructions into neutral language.
-4. Ensure sandbox-specific files retain their AI language.
-5. Ensure README and primary docs do not encourage AI use for operation.
-
----
-
-## Constraints
-
-- Do not alter functionality of scripts.
-- AI tooling references remain in sandbox docs only.
-
----
-
-## Expected Outcomes
-
-- Scripts and modules contain no AI references.
-- Sandbox docs remain untouched.
-
----
-
 # WO-TODO-001 — Restructure `todo.md` with categories and per-script/module tasks
 
 ## Context
@@ -149,7 +97,6 @@ The detailed implementation instructions for these items live in `.codex/work_or
 
 - `WO-LOGGING-001` – Add central run logging for all scripts.
 - `WO-AUDIT-001` – Merge audit_notes into changelog and todo.
-- `WO-AI-001` – Remove tooling references from scripts and modules.
 - `WO-TODO-001` – Restructure todo.md with categories and per-script/module tasks.
 
 ---
