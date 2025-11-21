@@ -160,3 +160,75 @@ The detailed implementation instructions for these items live in the sandbox-onl
 - Keep this file free of explicit references to development tools.
 - Assign a Type, Area, and Priority for new tasks.
 - Remove tasks promptly once complete.
+
+---
+
+## Workflow Migration Work Orders
+
+# WO-WORKFLOW-001 — Define GitHub Issue labels and templates
+
+## Summary
+Design Issue types and labels for Work Orders, Bugs, and Research tasks.
+
+## Tasks
+1. Research & Plan: Review GitHub documentation on Issue templates and labels before implementation.
+2. Define label taxonomy for type and status.
+3. Draft GitHub Issue templates for Work Orders, Bugs, and Research.
+4. Add template configuration under `.github/ISSUE_TEMPLATE`.
+5. Validate that new Issues can be created with the templates, confirming labels and fields.
+
+## Acceptance Criteria
+- Creating a new Issue shows the three templates.
+- Templates apply correct labels and fields.
+
+---
+
+# WO-WORKFLOW-002 — Freeze markdown trackers for new work
+
+## Summary
+Transition new work tracking to GitHub Issues once templates exist and clearly mark markdown trackers as migration-only.
+
+## Tasks
+1. Research & Plan: Review `ai_project_rules.md` constraints before editing.
+2. Update `ai_project_rules.md` to state that new work must be tracked in GitHub Issues once templates are available.
+3. Add a banner at the top of `work_orders.md` and `todo.md` marking them as "no new work, migration in progress" after Stage 1 completes.
+4. Confirm contributors know to open new Issues instead of adding markdown entries.
+
+## Acceptance Criteria
+- `ai_project_rules.md` calls for Issues as the canonical backlog post-template creation.
+- `work_orders.md` and `todo.md` display a migration banner once Stage 1 is complete.
+
+---
+
+# WO-WORKFLOW-003 — Migrate open Work Orders and todos into GitHub Issues
+
+## Summary
+Move existing Work Orders and backlog items into GitHub Issues using the new templates.
+
+## Tasks
+1. Research & Plan: Review GitHub documentation on closing Issues via Pull Requests before migrating entries.
+2. Inventory all open Work Orders.
+3. Inventory todos that should become Issues.
+4. Create matching GitHub Issues for each item using the new templates.
+5. Mark migrated entries in `work_orders.md` and `todo.md` as archived or migrated.
+
+## Acceptance Criteria
+- All open Work Orders and relevant todos have corresponding GitHub Issues.
+- Migrated markdown entries are marked as archived/migrated with links or identifiers.
+
+---
+
+# WO-WORKFLOW-004 — Enforce AI agent rules and automation for Issue workflow
+
+## Summary
+Update guardrails and automation to enforce the Issue → branch → Pull Request flow.
+
+## Tasks
+1. Research & Plan: Review official guidance for GitHub automation options before updating guardrails.
+2. Update `ai_project_rules.md` and `AGENTS.md` to describe the Issue → branch → Pull Request flow.
+3. Plan a minimal GitHub Actions workflow to enforce the new process (implemented in a later Pull Request).
+4. Emphasize that each Work Order or Issue begins with a short Research & Plan subtask leveraging official vendor documentation.
+
+## Acceptance Criteria
+- `ai_project_rules.md` and `AGENTS.md` capture the Issue-driven workflow and Research & Plan requirement.
+- A follow-on work item is ready to add GitHub Actions enforcement without ambiguity.

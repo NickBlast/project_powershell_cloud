@@ -2,6 +2,13 @@
 
 Use this file as the single backlog for the repository. Keep entries actionable and remove them as soon as they are completed.
 
+## Workflow Migration – Short-Term Tasks
+
+- [ ] Read `WO-WORKFLOW-001` and create a GitHub Issue to track it.
+- [ ] For `WO-WORKFLOW-001`: Research GitHub documentation for Issue templates and labels, then refine the Work Order if needed.
+- [ ] For `WO-WORKFLOW-002`: Review `ai_project_rules.md` to understand existing AI rules before editing.
+- [ ] For `WO-WORKFLOW-003`: List all open Work Orders that need migration into Issues.
+
 ## Legend
 
 - **Type**
