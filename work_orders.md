@@ -8,7 +8,6 @@ Repository:
 Each work order is self-contained and should not modify areas owned by another work order unless explicitly stated.
 
 ---
-
 # WO-TODO-001 — Restructure `todo.md` with categories and per-script/module tasks
 
 ## Context
@@ -93,7 +92,7 @@ Use this file as the single backlog. Keep entries actionable and remove them as 
 
 ## Work Orders Snapshot
 
-The detailed implementation instructions for these items live in `.codex/work_orders.md`.
+The detailed implementation instructions for these items live in the sandbox-only work_orders file.
 
 - `WO-LOGGING-001` – Add central run logging for all scripts.
 - `WO-AUDIT-001` – Merge audit_notes into changelog and todo.

@@ -1,3 +1,7 @@
+> [INTERNAL USE ONLY]  
+> This document is for repository maintainers and automated assistants.  
+> It is not part of the exported operator documentation or any artifacts shipped to corporate environments.
+
 # Repo Contract — PowerShell IAM Inventory (Canonical)
 
 > **Status:** Approved baseline for all implementation and research activity.  
