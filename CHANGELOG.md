@@ -7,7 +7,7 @@
 - Documented the Entra/Azure testing workflow refresh, including new `Connect-EntraTestTenant` helpers, seeding script (`scripts/seed-entra_test_assets.ps1`), and `tests/run-tests-basic.ps1` for smoke coverage with outputs under `outputs/entra` and `outputs/azure`.
 
 ### Changed
-- Completed WO-AI-001 by removing artificial intelligence/tooling references from scripts, modules, and operator-facing documentation, confirming remaining references stay within sandbox/agent-only files after a repository-wide verification sweep.
+- Completed WO-AI-001 by removing artificial intelligence/tooling references from scripts, modules, and operator-facing documentation, keeping remaining mentions confined to sandbox/agent-only files, and retiring the work order from `work_orders.md`, `.codex/work_orders.md`, and the `todo.md` snapshot after a repository-wide verification sweep.
 - Completed WO-PR-RULES-000 by codifying small-PR and branch-per-work-order workflows, updating CONTRIBUTING, adding a PR template, and documenting PR philosophy in README and governance docs.
 - Renamed the tenant connection module to `modules/entra_connection/entra_connection.psm1`, refreshed its Microsoft Entra documentation, and updated every script/doc import along with SecretManagement/Connect-* patterns that follow current Microsoft guidance.
 - Updated `scripts/ensure-prereqs.ps1`, README, and contract docs to treat module versions as minimums, ensure Microsoft.Graph.Entra is installed, and avoid downgrading newer Az/Graph bits.
