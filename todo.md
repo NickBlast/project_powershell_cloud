@@ -22,6 +22,13 @@ Use this file as the single backlog for the repository. Keep entries actionable 
   - `P2` – Medium priority.
   - `P3` – Lower priority / future phase.
 
+## Workflow Migration – Short-Term Tasks
+
+- [ ] Read `WO-WORKFLOW-001` and create a GitHub Issue to track it.
+- [ ] For `WO-WORKFLOW-001`: Review GitHub documentation for Issue templates and labels, then refine the Work Order if needed.
+- [ ] For `WO-WORKFLOW-002`: Review `ai_project_rules.md` to understand existing AI rules before adding the migration banner.
+- [ ] For `WO-WORKFLOW-003`: List all open Work Orders and todos that should be migrated into GitHub Issues.
+
 ## Work Orders Snapshot
 
 Detailed implementation guidance currently lives in the sandbox-only work_orders file for `WO-TODO-001`. The summaries below will be expanded there as the work orders progress.

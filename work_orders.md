@@ -160,3 +160,102 @@ The detailed implementation instructions for these items live in the sandbox-onl
 - Keep this file free of explicit references to development tools.
 - Assign a Type, Area, and Priority for new tasks.
 - Remove tasks promptly once complete.
+
+---
+## Workflow Migration Work Orders
+
+# WO-WORKFLOW-001 — Define GitHub Issue labels and templates
+
+## Context
+
+We need a consistent GitHub Issue structure before shifting backlog tracking away from markdown files.
+
+## Objective
+
+Design GitHub Issue types and labels that mirror existing Work Orders and todos.
+
+## Tasks
+
+1. **Research & Plan:** Review GitHub documentation on Issue templates and label strategies before drafting changes.
+2. Define a label taxonomy that covers type and status for Work Orders, Bugs, and Research tasks.
+3. Draft GitHub Issue templates for Work Orders, Bugs, and Research items.
+4. Add template configuration under `.github/ISSUE_TEMPLATE`.
+5. Validate that creating a new Issue offers the three templates with correct default labels and fields.
+
+## Acceptance Criteria
+
+- Creating a new Issue shows the Work Order, Bug, and Research templates.
+- Templates apply the expected labels and required fields automatically.
+
+---
+
+# WO-WORKFLOW-002 — Freeze markdown trackers for new work
+
+## Context
+
+Once Issue templates exist, markdown trackers should stop accepting new items and point contributors to GitHub Issues.
+
+## Objective
+
+Mark `work_orders.md` and `todo.md` as migration-only trackers while directing new work to Issues.
+
+## Tasks
+
+1. **Research & Plan:** Review `ai_project_rules.md` constraints before editing guidance for new work.
+2. Update `ai_project_rules.md` to require new work to be tracked in GitHub Issues once templates are available.
+3. Add a banner at the top of `work_orders.md` and `todo.md` stating “no new work, migration in progress” after Stage 1 completes.
+4. Confirm the banner clearly directs contributors to create GitHub Issues for any new tasks.
+
+## Acceptance Criteria
+
+- `ai_project_rules.md` instructs contributors to open new work in GitHub Issues once templates are live.
+- `work_orders.md` and `todo.md` display a clear migration banner and do not accept new work items.
+
+---
+
+# WO-WORKFLOW-003 — Migrate open Work Orders and todos into GitHub Issues
+
+## Context
+
+Existing backlog items in markdown need to move into GitHub Issues without losing traceability.
+
+## Objective
+
+Create GitHub Issues for all open Work Orders and relevant todos, marking migrated entries in the markdown trackers.
+
+## Tasks
+
+1. **Research & Plan:** Review GitHub documentation on closing Issues via Pull Requests before starting migrations.
+2. Inventory all open Work Orders that require migration.
+3. Inventory todos that should become GitHub Issues.
+4. Create matching GitHub Issues using the new templates for each item identified.
+5. Mark migrated entries in `work_orders.md` and `todo.md` as archived or migrated while preserving history.
+
+## Acceptance Criteria
+
+- Every open Work Order and relevant todo has a corresponding GitHub Issue using the correct template.
+- Migrated markdown entries are clearly marked as archived/migrated with links or references to the new Issues.
+
+---
+
+# WO-WORKFLOW-004 — Enforce AI agent rules and automation for Issue workflow
+
+## Context
+
+After migration, guardrails and automation must reinforce the Issue → branch → Pull Request flow.
+
+## Objective
+
+Update contributor and agent guidance, and plan automation to enforce the new workflow.
+
+## Tasks
+
+1. **Research & Plan:** Review existing AI agent rules and GitHub Actions capabilities before drafting updates.
+2. Update `ai_project_rules.md` and `AGENTS.md` to describe the Issue → branch → Pull Request flow.
+3. Plan a minimal GitHub Actions workflow to enforce the new process (to be added in a later PR).
+4. Emphasize that each Work Order or Issue begins with a short Research & Plan subtask using official documentation where possible.
+
+## Acceptance Criteria
+
+- `ai_project_rules.md` and `AGENTS.md` clearly document the Issue-driven workflow and Research & Plan requirement.
+- A concrete plan exists for a GitHub Actions workflow that will be added in a future PR to enforce the process.
