@@ -160,3 +160,32 @@ The detailed implementation instructions for these items live in the sandbox-onl
 - Keep this file free of explicit references to development tools.
 - Assign a Type, Area, and Priority for new tasks.
 - Remove tasks promptly once complete.
+
+---
+# WO-LOGGING-001 — Centralize run logging for entrypoint scripts
+
+## Context
+
+Entrypoint scripts should emit consistent, structured run logs so operators can trace exports and prerequisite checks with a shared correlation identifier and metadata envelope. Logging artifacts live under `logs/` using a standard naming pattern to simplify troubleshooting and audit review.
+
+---
+
+## Objective
+
+Establish a minimal logging API in `modules/logging/Logging.psm1` and wire initial scripts to it so every run records start/end markers, tenant metadata when available, and dataset context without altering export schemas.
+
+---
+
+## Tasks
+
+1. Add Start-RunLog, Write-RunLog, and Complete-RunLog functions to the logging module with a deterministic log naming pattern and structured entries.
+2. Update `scripts/ensure-prereqs.ps1` and `scripts/export-azure_scopes.ps1` to use the new logging spine, capturing connection attempts, counts, and completion status while keeping existing output formats unchanged.
+3. Refresh `todo.md` and documentation to reflect the centralized logging pattern, marking completed items and noting remaining script migrations.
+
+---
+
+## Acceptance Criteria
+
+- Logs are created under `logs/` using the `yyyyMMdd-HHmmss-<scriptname>-run.log` pattern and include a correlation identifier per run.
+- The two wired scripts write structured entries for start, milestones, and completion, and surface the log path in console output.
+- Backlog and documentation indicate which logging tasks are complete and which scripts still need migration to the shared pattern.
