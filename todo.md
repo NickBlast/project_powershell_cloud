@@ -34,10 +34,11 @@ Detailed implementation guidance currently lives in the sandbox-only work_orders
 
 ### LOGGING
 
-- [ ] [META][LOGGING][P1] Implement centralized run logging so every entry point emits consistent metadata (dataset name, tenant label, correlation ID, tool version) to `logs/` and `outputs/`.
-- [ ] [ENH][LOGGING][P2] Refine logging helpers so scripts and modules emit the same correlation identifiers and payload structure required by WO-LOGGING-001.
-- [ ] [DOC][LOGGING][P2] Add log review and retention guidance to `README.md` once the central logger is in place.
+- [x] [META][LOGGING][P1] Implement centralized run logging so every entry point emits consistent metadata (dataset name, tenant label, correlation ID, tool version) to `logs/` and `outputs/`.
+- [x] [ENH][LOGGING][P2] Refine logging helpers so scripts and modules emit the same correlation identifiers and payload structure required by WO-LOGGING-001.
+- [x] [DOC][LOGGING][P2] Add log review and retention guidance to `README.md` once the central logger is in place.
 - [ ] [META][LOGGING][P2] Ensure Script Analyzer output persists to `examples/` after the Wave 7 prereq workflow updates.
+- [ ] [META][LOGGING][P2] Migrate remaining export scripts to the shared Start-RunLog/Write-RunLog pattern and record traversal summaries.
 
 ### DOCS
 
@@ -89,7 +90,7 @@ Detailed implementation guidance currently lives in the sandbox-only work_orders
 
 - [ ] [BUG][EXPORTS][P1] Run the script on a representative host to confirm prereq detection, PSResourceGet installs, and analyzer output persistence still work post-Wave 7.
 - [ ] [ENH][EXPORTS][P2] Improve user messaging and parameter handling so tenant and environment overrides do not require file edits.
-- [ ] [META][LOGGING][P2] Document and verify the logging emitted during prereq checks once centralized logging lands.
+- [x] [META][LOGGING][P2] Document and verify the logging emitted during prereq checks once centralized logging lands.
 
 ### scripts/seed-entra_test_assets.ps1
 
@@ -113,7 +114,7 @@ Detailed implementation guidance currently lives in the sandbox-only work_orders
 
 - [ ] [BUG][EXPORTS][P1] Confirm the script honors tenant-scoped filtering and does not mix scope types during export.
 - [ ] [ENH][EXPORTS][P2] Add parameters for limiting resource types or depth so operators can tailor the scope crawl.
-- [ ] [META][LOGGING][P2] Ensure scope exports record their traversal summary inside the shared logging format.
+- [x] [META][LOGGING][P2] Ensure scope exports record their traversal summary inside the shared logging format.
 
 ### scripts/export-entra_apps_service_principals.ps1
 

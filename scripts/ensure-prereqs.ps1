@@ -42,10 +42,13 @@ $scriptName = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)
 
 Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
 
+$runContext = Start-RunLog -ScriptName $scriptName -ScriptVersion '1.1.0'
+
 function Invoke-ScriptMain {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
-        [switch]$Quiet
+        [switch]$Quiet,
+        [pscustomobject]$RunContext
     )
 
     #region Setup and Configuration
@@ -70,10 +73,17 @@ $requiredModules = @(
     @{ Name = 'Microsoft.Graph.Entra'; MinimumVersion = '2.9.0' }
 )
 
+    Write-RunLog -Context $RunContext -Level Info -Message 'Starting prerequisite validation.' -Metadata @{ modules_target = $requiredModules.Count }
+
 $repoRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..')).Path
 $examplesDir = Join-Path -Path $repoRoot -ChildPath 'examples'
 $reportPath = Join-Path -Path $examplesDir -ChildPath 'prereq_report.json'
 $excludedAnalyzerDirectories = @('.git', '.archive', 'examples', 'logs', 'outputs', 'reports')
+$moduleInstallSummary = [ordered]@{
+        evaluated = $requiredModules.Count
+        installed = 0
+        skipped   = 0
+    }
 
 # Write-Step keeps operator-facing progress messages consistent even when Quiet/Verbose settings change.
 function Write-Step {
@@ -149,16 +159,21 @@ Write-Step "Step 1: Verifying PowerShell version..."
 Write-Verbose "Required version: $requiredPSVersion or higher."
 Write-Verbose "Detected version: $($PSVersionTable.PSVersion)"
 
+Write-RunLog -Context $RunContext -Level Info -Message "Checking PowerShell version $($PSVersionTable.PSVersion) against minimum $requiredPSVersion."
+
 if ($PSVersionTable.PSVersion -lt $requiredPSVersion) {
     Write-Error "PowerShell version $($PSVersionTable.PSVersion) is not supported. Please upgrade to version $requiredPSVersion or higher."
+    Write-RunLog -Context $RunContext -Level Error -Message "PowerShell version $($PSVersionTable.PSVersion) below requirement." -Metadata @{ required = $requiredPSVersion.ToString() }
     throw "PowerShell version $($PSVersionTable.PSVersion) is below the required $requiredPSVersion."
 }
 Write-Step "[OK] PowerShell version check passed."
+Write-RunLog -Context $RunContext -Level Info -Message "PowerShell version requirement satisfied." -Metadata @{ detected_version = $PSVersionTable.PSVersion.ToString() }
 #endregion
 
 #region 2. PSResourceGet Check
 # Verifies PSResourceGet is present at the pinned version because every later module install depends on it.
 Write-Step "`nStep 2: Verifying $psResourceModuleName..."
+Write-RunLog -Context $RunContext -Level Info -Message "Validating $psResourceModuleName presence." -Metadata @{ required_version = $psResourceModuleVersion.ToString() }
 
 try {
     $psResourceGetModule = Get-Module -Name $psResourceModuleName -ListAvailable |
@@ -169,15 +184,18 @@ try {
         Write-Step "PSResourceGet not found or below version $psResourceModuleVersion. Installing..."
         if ($PSCmdlet.ShouldProcess($psResourceModuleName, "Install version $psResourceModuleVersion")) {
             Install-Module -Name $psResourceModuleName -Repository PSGallery -Scope CurrentUser -Force -AllowClobber -RequiredVersion $psResourceModuleVersion | Out-Null
+            Write-RunLog -Context $RunContext -Level Info -Message "Installed $psResourceModuleName $psResourceModuleVersion." -Metadata @{ action = 'install' }
         }
     }
 
     Import-Module -Name $psResourceModuleName -MinimumVersion $psResourceModuleVersion -ErrorAction Stop | Out-Null
     $psResourceGetModule = Get-Module -Name $psResourceModuleName
     Write-Step "[OK] $psResourceModuleName version $($psResourceGetModule.Version) is available."
+    Write-RunLog -Context $RunContext -Level Info -Message "$psResourceModuleName available." -Metadata @{ detected_version = $psResourceGetModule.Version.ToString() }
 }
 catch {
     Write-Error "Failed to find, install, or import $psResourceModuleName. $_"
+    Write-RunLog -Context $RunContext -Level Error -Message "Failed to prepare $psResourceModuleName." -Metadata @{ error = $_.Exception.Message }
     throw "Failed to find, install, or import $psResourceModuleName."
 }
 #endregion
@@ -196,6 +214,8 @@ foreach ($module in $requiredModules) {
 
     if ($installedModule -and [Version]$installedModule.Version -ge $minimumVersion) {
         Write-Step "  - $moduleName ($($installedModule.Version)) meets the minimum version requirement ($minimumVersion)."
+        $moduleInstallSummary.skipped++
+        Write-RunLog -Context $RunContext -Level Info -Message "$moduleName already meets minimum version." -Metadata @{ detected_version = $installedModule.Version.ToString(); required_version = $minimumVersion.ToString() }
         continue
     }
 
@@ -210,9 +230,12 @@ foreach ($module in $requiredModules) {
         try {
             Install-PSResource -Name $moduleName -Version $module.MinimumVersion -Repository PSGallery -Scope CurrentUser -AcceptLicense -ErrorAction Stop | Out-Null
             Write-Step "  [OK] $actionMessage completed."
+            $moduleInstallSummary.installed++
+            Write-RunLog -Context $RunContext -Level Info -Message "$actionMessage completed." -Metadata @{ module = $moduleName; target_version = $minimumVersion.ToString() }
         }
         catch {
             Write-Error "Failed to install $moduleName version $($module.MinimumVersion). $_"
+            Write-RunLog -Context $RunContext -Level Error -Message "Failed to install or update $moduleName." -Metadata @{ target_version = $minimumVersion.ToString(); error = $_.Exception.Message }
             throw "Failed to install or update module $moduleName."
         }
     }
@@ -272,6 +295,7 @@ catch {
     Select-Object -ExpandProperty FullName
 
 $analysisCount = if ($analysisPaths) { $analysisPaths.Count } else { 0 }
+Write-RunLog -Context $RunContext -Level Info -Message 'Collected files for ScriptAnalyzer.' -Metadata @{ file_count = $analysisCount }
 
 if ($analysisCount -eq 0) {
     Write-Step "No PowerShell files found for analysis. Skipping Invoke-ScriptAnalyzer."
@@ -300,11 +324,12 @@ if ($PSCmdlet.ShouldProcess($reportPath, 'Generate PSScriptAnalyzer Report')) {
     Write-Step "[OK] PSScriptAnalyzer report saved to: $reportPath"
 }
 
-if (-not $Quiet) {
-    $errors = @($analyzerResults | Where-Object { $_.Severity -eq 'Error' })
-    $warnings = @($analyzerResults | Where-Object { $_.Severity -eq 'Warning' })
-    $info = @($analyzerResults | Where-Object { $_.Severity -eq 'Information' })
+$errors = @($analyzerResults | Where-Object { $_.Severity -eq 'Error' })
+$warnings = @($analyzerResults | Where-Object { $_.Severity -eq 'Warning' })
+$info = @($analyzerResults | Where-Object { $_.Severity -eq 'Information' })
+Write-RunLog -Context $RunContext -Level Info -Message 'PSScriptAnalyzer completed.' -Metadata @{ total = $analyzerResults.Count; errors = $errors.Count; warnings = $warnings.Count }
 
+if (-not $Quiet) {
     Write-Information "`n[PSScriptAnalyzer Summary]"
     Write-Information "  Files analyzed: $($analysisPaths.Count)"
     Write-Information "  Total Issues: $($analyzerResults.Count)"
@@ -335,14 +360,42 @@ if ($blockingFindings.Count -gt 0) {
 Write-Step "`n[OK] Prerequisite check completed successfully."
 #endregion
 
+    $summary = [pscustomobject]@{
+        ModulesEvaluated = $moduleInstallSummary.evaluated
+        ModulesInstalled = $moduleInstallSummary.installed
+        ModulesSkipped   = $moduleInstallSummary.skipped
+        AnalyzerIssues   = $analyzerResults.Count
+        AnalyzerErrors   = $errors.Count
+        AnalyzerWarnings = $warnings.Count
+    }
+
+    Write-RunLog -Context $RunContext -Level Info -Message 'Prerequisite check completed.' -Metadata @{ modules_installed = $moduleInstallSummary.installed; modules_skipped = $moduleInstallSummary.skipped; analyzer_issues = $analyzerResults.Count }
+
+    return $summary
 }
 
-$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -Quiet:$Quiet }
+$scriptSummary = $null
+$succeeded = $false
+try {
+    $scriptSummary = Invoke-ScriptMain -Quiet:$Quiet -RunContext $runContext
+    $succeeded = $true
+}
+catch {
+    Write-RunLog -Context $runContext -Level Error -Message "Unhandled error during prerequisite check: $($_.Exception.Message)" -Metadata @{ error = $_.Exception.GetType().Name }
+    Write-Error $_
+}
+finally {
+    Complete-RunLog -Context $runContext -Succeeded:$succeeded -Summary @{
+        modules_installed = if ($scriptSummary) { $scriptSummary.ModulesInstalled } else { $null }
+        modules_skipped   = if ($scriptSummary) { $scriptSummary.ModulesSkipped } else { $null }
+        analyzer_issues   = if ($scriptSummary) { $scriptSummary.AnalyzerIssues } else { $null }
+    } | Out-Null
+}
 
-if ($runResult.Succeeded) {
-    Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
+if ($succeeded) {
+    Write-Output "Prerequisite checks completed. See $($runContext.RelativeLogPath) for details."
     exit 0
 } else {
-    Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
+    Write-Output "Errors detected. Check $($runContext.RelativeLogPath) for details."
     exit 1
 }
