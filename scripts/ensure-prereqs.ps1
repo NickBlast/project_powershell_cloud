@@ -39,13 +39,17 @@ param(
 )
 
 $scriptName = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)
+$scriptVersion = '1.1.0'
 
 Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
+
+$runContext = Start-RunLog -ScriptName $scriptName -ScriptVersion $scriptVersion
 
 function Invoke-ScriptMain {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
-        [switch]$Quiet
+        [switch]$Quiet,
+        [pscustomobject]$RunContext
     )
 
     #region Setup and Configuration
@@ -55,93 +59,96 @@ function Invoke-ScriptMain {
     $VerbosePreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
     $InformationPreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
 
-$requiredPSVersion = [Version]'7.4.0'
-$psResourceModuleName = 'Microsoft.PowerShell.PSResourceGet'
-$psResourceModuleVersion = [Version]'1.0.5'
+    $requiredPSVersion = [Version]'7.4.0'
+    $psResourceModuleName = 'Microsoft.PowerShell.PSResourceGet'
+    $psResourceModuleVersion = [Version]'1.0.5'
 
-$requiredModules = @(
-    @{ Name = 'Az.Accounts'; MinimumVersion = '2.12.1' }
-    @{ Name = 'Az.Resources'; MinimumVersion = '6.6.0' }
-    @{ Name = 'ImportExcel'; MinimumVersion = '7.8.5' }
-    @{ Name = 'PSScriptAnalyzer'; MinimumVersion = '1.21.0' }
-    @{ Name = 'Pester'; MinimumVersion = '5.5.0' }
-    @{ Name = 'Microsoft.PowerShell.SecretManagement'; MinimumVersion = '1.1.2' }
-    @{ Name = 'Microsoft.Graph'; MinimumVersion = '2.9.0' }
-    @{ Name = 'Microsoft.Graph.Entra'; MinimumVersion = '2.9.0' }
-)
-
-$repoRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..')).Path
-$examplesDir = Join-Path -Path $repoRoot -ChildPath 'examples'
-$reportPath = Join-Path -Path $examplesDir -ChildPath 'prereq_report.json'
-$excludedAnalyzerDirectories = @('.git', '.archive', 'examples', 'logs', 'outputs', 'reports')
-
-# Write-Step keeps operator-facing progress messages consistent even when Quiet/Verbose settings change.
-function Write-Step {
-    param(
-        [Parameter(Mandatory)]
-        [string]$Message
+    $requiredModules = @(
+        @{ Name = 'Az.Accounts'; MinimumVersion = '2.12.1' }
+        @{ Name = 'Az.Resources'; MinimumVersion = '6.6.0' }
+        @{ Name = 'ImportExcel'; MinimumVersion = '7.8.5' }
+        @{ Name = 'PSScriptAnalyzer'; MinimumVersion = '1.21.0' }
+        @{ Name = 'Pester'; MinimumVersion = '5.5.0' }
+        @{ Name = 'Microsoft.PowerShell.SecretManagement'; MinimumVersion = '1.1.2' }
+        @{ Name = 'Microsoft.Graph'; MinimumVersion = '2.9.0' }
+        @{ Name = 'Microsoft.Graph.Entra'; MinimumVersion = '2.9.0' }
     )
 
-    Write-Information $Message
-    Write-Verbose $Message
-}
-#endregion
+    $repoRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..')).Path
+    $examplesDir = Join-Path -Path $repoRoot -ChildPath 'examples'
+    $reportPath = Join-Path -Path $examplesDir -ChildPath 'prereq_report.json'
+    $excludedAnalyzerDirectories = @('.git', '.archive', 'examples', 'logs', 'outputs', 'reports')
 
-#region Helper Functions
-# Encapsulated helpers keep the main steps terse and guarantee consistent behavior across platforms.
-function Get-CurrentUserModulePath {
-    <#
-        .SYNOPSIS
-            Resolves the CurrentUser module installation path without assuming MyDocuments is populated.
+    $modulesEvaluated = 0
+    $modulesInstalled = 0
 
-        .DESCRIPTION
-            PowerShell normally stores CurrentUser modules under a directory derived from the user's
-            Documents folder.  In containerized Linux environments, [Environment]::GetFolderPath('MyDocuments')
-            can return an empty string which causes Join-Path to throw.  This helper centralizes the
-            resolution logic and provides OS-specific fallbacks that align with the defaults documented in
-            about_PSModulePath.
-    #>
+    # Write-Step keeps operator-facing progress messages consistent even when Quiet/Verbose settings change.
+    function Write-Step {
+        param(
+            [Parameter(Mandatory)]
+            [string]$Message
+        )
 
-    $documentsPath = [Environment]::GetFolderPath('MyDocuments')
-    if (-not [string]::IsNullOrWhiteSpace($documentsPath)) {
-        $moduleRootName = if ($IsCoreCLR) { 'PowerShell' } else { 'WindowsPowerShell' }
-        $documentsModuleRoot = Join-Path -Path $documentsPath -ChildPath $moduleRootName
-        return Join-Path -Path $documentsModuleRoot -ChildPath 'Modules'
+        Write-Information $Message
+        Write-Verbose $Message
+    }
+    #endregion
+
+    #region Helper Functions
+    # Encapsulated helpers keep the main steps terse and guarantee consistent behavior across platforms.
+    function Get-CurrentUserModulePath {
+        <#
+            .SYNOPSIS
+                Resolves the CurrentUser module installation path without assuming MyDocuments is populated.
+
+            .DESCRIPTION
+                PowerShell normally stores CurrentUser modules under a directory derived from the user's
+                Documents folder.  In containerized Linux environments, [Environment]::GetFolderPath('MyDocuments')
+                can return an empty string which causes Join-Path to throw.  This helper centralizes the
+                resolution logic and provides OS-specific fallbacks that align with the defaults documented in
+                about_PSModulePath.
+        #>
+
+        $documentsPath = [Environment]::GetFolderPath('MyDocuments')
+        if (-not [string]::IsNullOrWhiteSpace($documentsPath)) {
+            $moduleRootName = if ($IsCoreCLR) { 'PowerShell' } else { 'WindowsPowerShell' }
+            $documentsModuleRoot = Join-Path -Path $documentsPath -ChildPath $moduleRootName
+            return Join-Path -Path $documentsModuleRoot -ChildPath 'Modules'
+        }
+
+        $homePath = $HOME
+        if ([string]::IsNullOrWhiteSpace($homePath)) {
+            throw "Unable to resolve the CurrentUser module path because neither MyDocuments nor HOME are defined."
+        }
+
+        if ($IsWindows) {
+            $moduleRootName = if ($IsCoreCLR) { 'PowerShell' } else { 'WindowsPowerShell' }
+            return [System.IO.Path]::Combine($homePath, 'Documents', $moduleRootName, 'Modules')
+        }
+
+        return [System.IO.Path]::Combine($homePath, '.local', 'share', 'powershell', 'Modules')
     }
 
-    $homePath = $HOME
-    if ([string]::IsNullOrWhiteSpace($homePath)) {
-        throw "Unable to resolve the CurrentUser module path because neither MyDocuments nor HOME are defined."
+    # Determines whether a path should be skipped when running ScriptAnalyzer so we do not lint generated folders.
+    function Test-IsExcludedAnalyzerPath {
+        param(
+            [Parameter(Mandatory)]
+            [string]$FullPath
+        )
+
+        $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $FullPath)
+        if (-not $relativePath -or $relativePath -eq '.' -or $relativePath.StartsWith('..')) {
+            return $false
+        }
+
+        $relativeSegments = $relativePath -split '[\\/]' | Where-Object { $_ }
+        if (-not $relativeSegments) {
+            return $false
+        }
+
+        return $relativeSegments[0] -in $excludedAnalyzerDirectories
     }
-
-    if ($IsWindows) {
-        $moduleRootName = if ($IsCoreCLR) { 'PowerShell' } else { 'WindowsPowerShell' }
-        return [System.IO.Path]::Combine($homePath, 'Documents', $moduleRootName, 'Modules')
-    }
-
-    return [System.IO.Path]::Combine($homePath, '.local', 'share', 'powershell', 'Modules')
-}
-
-# Determines whether a path should be skipped when running ScriptAnalyzer so we do not lint generated folders.
-function Test-IsExcludedAnalyzerPath {
-    param(
-        [Parameter(Mandatory)]
-        [string]$FullPath
-    )
-
-    $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $FullPath)
-    if (-not $relativePath -or $relativePath -eq '.' -or $relativePath.StartsWith('..')) {
-        return $false
-    }
-
-    $relativeSegments = $relativePath -split '[\\/]' | Where-Object { $_ }
-    if (-not $relativeSegments) {
-        return $false
-    }
-
-    return $relativeSegments[0] -in $excludedAnalyzerDirectories
-}
-#endregion
+    #endregion
 
 #region 1. PowerShell Version Check
 # We fail fast if someone runs an older shell so the rest of the install process does not waste time.
@@ -154,6 +161,7 @@ if ($PSVersionTable.PSVersion -lt $requiredPSVersion) {
     throw "PowerShell version $($PSVersionTable.PSVersion) is below the required $requiredPSVersion."
 }
 Write-Step "[OK] PowerShell version check passed."
+Write-RunLog -RunContext $RunContext -Level Info -Message 'PowerShell version verified' -AdditionalData @{ required = $requiredPSVersion.ToString(); detected = $PSVersionTable.PSVersion.ToString() }
 #endregion
 
 #region 2. PSResourceGet Check
@@ -175,6 +183,7 @@ try {
     Import-Module -Name $psResourceModuleName -MinimumVersion $psResourceModuleVersion -ErrorAction Stop | Out-Null
     $psResourceGetModule = Get-Module -Name $psResourceModuleName
     Write-Step "[OK] $psResourceModuleName version $($psResourceGetModule.Version) is available."
+    Write-RunLog -RunContext $RunContext -Level Info -Message 'PSResourceGet validated' -AdditionalData @{ version = $psResourceGetModule.Version.ToString() }
 }
 catch {
     Write-Error "Failed to find, install, or import $psResourceModuleName. $_"
@@ -190,12 +199,15 @@ foreach ($module in $requiredModules) {
     $minimumVersion = [Version]$module.MinimumVersion
     Write-Verbose "Checking module: $moduleName (minimum version: $minimumVersion)"
 
+    $modulesEvaluated++
+
     $installedModule = Get-InstalledPSResource -Name $moduleName -ErrorAction SilentlyContinue |
         Sort-Object -Property Version -Descending |
         Select-Object -First 1
 
     if ($installedModule -and [Version]$installedModule.Version -ge $minimumVersion) {
         Write-Step "  - $moduleName ($($installedModule.Version)) meets the minimum version requirement ($minimumVersion)."
+        Write-RunLog -RunContext $RunContext -Level Info -Message 'Module already meets minimum version' -AdditionalData @{ module = $moduleName; installed_version = $installedModule.Version.ToString(); required_version = $minimumVersion.ToString() }
         continue
     }
 
@@ -210,6 +222,8 @@ foreach ($module in $requiredModules) {
         try {
             Install-PSResource -Name $moduleName -Version $module.MinimumVersion -Repository PSGallery -Scope CurrentUser -AcceptLicense -ErrorAction Stop | Out-Null
             Write-Step "  [OK] $actionMessage completed."
+            $modulesInstalled++
+            Write-RunLog -RunContext $RunContext -Level Info -Message 'Module installed or updated' -AdditionalData @{ module = $moduleName; target_version = $minimumVersion.ToString() }
         }
         catch {
             Write-Error "Failed to install $moduleName version $($module.MinimumVersion). $_"
@@ -300,11 +314,13 @@ if ($PSCmdlet.ShouldProcess($reportPath, 'Generate PSScriptAnalyzer Report')) {
     Write-Step "[OK] PSScriptAnalyzer report saved to: $reportPath"
 }
 
-if (-not $Quiet) {
     $errors = @($analyzerResults | Where-Object { $_.Severity -eq 'Error' })
     $warnings = @($analyzerResults | Where-Object { $_.Severity -eq 'Warning' })
     $info = @($analyzerResults | Where-Object { $_.Severity -eq 'Information' })
 
+    Write-RunLog -RunContext $RunContext -Level Info -Message 'PSScriptAnalyzer results collected' -AdditionalData @{ files_analyzed = $analysisPaths.Count; issues_total = $analyzerResults.Count; errors = $errors.Count; warnings = $warnings.Count; information = $info.Count }
+
+if (-not $Quiet) {
     Write-Information "`n[PSScriptAnalyzer Summary]"
     Write-Information "  Files analyzed: $($analysisPaths.Count)"
     Write-Information "  Total Issues: $($analyzerResults.Count)"
@@ -335,14 +351,48 @@ if ($blockingFindings.Count -gt 0) {
 Write-Step "`n[OK] Prerequisite check completed successfully."
 #endregion
 
+    return [pscustomobject]@{
+        ModulesEvaluated = $modulesEvaluated
+        ModulesInstalled = $modulesInstalled
+        AnalyzerIssues   = $analyzerResults.Count
+        AnalyzerErrors   = $errors.Count
+        AnalyzerWarnings = $warnings.Count
+    }
 }
 
-$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -Quiet:$Quiet }
+$executionSucceeded = $false
+$scriptSummary = $null
+$failureMessage = $null
 
-if ($runResult.Succeeded) {
-    Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
+try {
+    $scriptSummary = Invoke-ScriptMain -Quiet:$Quiet -RunContext $runContext
+    $executionSucceeded = $true
+}
+catch {
+    $failureMessage = $_.Exception.Message
+    Write-RunLog -RunContext $runContext -Level Error -Message 'Prerequisite checks failed' -AdditionalData @{ error = $failureMessage }
+}
+finally {
+    $completionData = @{}
+    if ($scriptSummary) {
+        $completionData['modules_evaluated'] = $scriptSummary.ModulesEvaluated
+        $completionData['modules_installed'] = $scriptSummary.ModulesInstalled
+        $completionData['analyzer_issues'] = $scriptSummary.AnalyzerIssues
+        $completionData['analyzer_errors'] = $scriptSummary.AnalyzerErrors
+        $completionData['analyzer_warnings'] = $scriptSummary.AnalyzerWarnings
+    }
+
+    if ($failureMessage) {
+        $completionData['error'] = $failureMessage
+    }
+
+    Complete-RunLog -RunContext $runContext -Status ($executionSucceeded ? 'Success' : 'Failed') -AdditionalData $completionData
+}
+
+if ($executionSucceeded) {
+    Write-Output "Prerequisite checks completed. See $($runContext.RelativeLogPath) for details."
     exit 0
-} else {
-    Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
-    exit 1
 }
+
+Write-Output "Errors detected during prerequisite checks. See $($runContext.RelativeLogPath) for details."
+exit 1

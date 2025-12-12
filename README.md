@@ -54,9 +54,9 @@ Schema validation is paused while exports stabilize; schema definitions will be 
 
 ## Logging
 
-- Every entrypoint script writes a run log to the root `logs/` directory using the pattern `yyyyMMdd-HHmmss-<scriptname>-run.log`.
-- All standard output, errors, and verbose messages are captured in the log file so the console stays quiet.
-- On completion, scripts print a short status message that points to the relative log path for follow-up troubleshooting.
+- Every entrypoint script writes a structured run log to the root `logs/` directory using the pattern `yyyyMMdd-HHmmss-<scriptname>-run.log`.
+- Each log entry captures a correlation identifier, script/dataset names, tenant metadata (when available), tool versions, and milestone messages in key-value format.
+- Console output stays concise; follow the path printed at the end of each run to review the detailed log.
 
 ## Minimal troubleshooting
 
