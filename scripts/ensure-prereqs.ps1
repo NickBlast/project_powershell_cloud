@@ -45,7 +45,8 @@ Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
 function Invoke-ScriptMain {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
-        [switch]$Quiet
+        [switch]$Quiet,
+        [pscustomobject]$RunContext
     )
 
     #region Setup and Configuration
@@ -54,6 +55,9 @@ function Invoke-ScriptMain {
     $ErrorActionPreference = 'Stop'
     $VerbosePreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
     $InformationPreference = if ($Quiet) { 'SilentlyContinue' } else { 'Continue' }
+
+    $modulesInstalledOrUpdated = 0
+    $blockingFindings = @()
 
 $requiredPSVersion = [Version]'7.4.0'
 $psResourceModuleName = 'Microsoft.PowerShell.PSResourceGet'
@@ -75,6 +79,14 @@ $examplesDir = Join-Path -Path $repoRoot -ChildPath 'examples'
 $reportPath = Join-Path -Path $examplesDir -ChildPath 'prereq_report.json'
 $excludedAnalyzerDirectories = @('.git', '.archive', 'examples', 'logs', 'outputs', 'reports')
 
+    if ($RunContext) {
+        Write-RunLog -RunContext $RunContext -Level 'Info' -Message 'Initialized prerequisite check' -Metadata @{
+            required_ps_version = $requiredPSVersion.ToString()
+            module_targets      = $requiredModules.Count
+            analyzer_report     = $reportPath
+        }
+    }
+
 # Write-Step keeps operator-facing progress messages consistent even when Quiet/Verbose settings change.
 function Write-Step {
     param(
@@ -84,6 +96,10 @@ function Write-Step {
 
     Write-Information $Message
     Write-Verbose $Message
+
+    if ($RunContext) {
+        Write-RunLog -RunContext $RunContext -Level 'Info' -Message $Message
+    }
 }
 #endregion
 
@@ -154,6 +170,13 @@ if ($PSVersionTable.PSVersion -lt $requiredPSVersion) {
     throw "PowerShell version $($PSVersionTable.PSVersion) is below the required $requiredPSVersion."
 }
 Write-Step "[OK] PowerShell version check passed."
+
+if ($RunContext) {
+    Write-RunLog -RunContext $RunContext -Level 'Info' -Message 'PowerShell version validated' -Metadata @{
+        detected_version = $PSVersionTable.PSVersion.ToString()
+        required_version = $requiredPSVersion.ToString()
+    }
+}
 #endregion
 
 #region 2. PSResourceGet Check
@@ -175,6 +198,13 @@ try {
     Import-Module -Name $psResourceModuleName -MinimumVersion $psResourceModuleVersion -ErrorAction Stop | Out-Null
     $psResourceGetModule = Get-Module -Name $psResourceModuleName
     Write-Step "[OK] $psResourceModuleName version $($psResourceGetModule.Version) is available."
+
+    if ($RunContext) {
+        Write-RunLog -RunContext $RunContext -Level 'Info' -Message 'PSResourceGet verified' -Metadata @{
+            detected_version = $psResourceGetModule.Version.ToString()
+            required_version = $psResourceModuleVersion.ToString()
+        }
+    }
 }
 catch {
     Write-Error "Failed to find, install, or import $psResourceModuleName. $_"
@@ -210,6 +240,15 @@ foreach ($module in $requiredModules) {
         try {
             Install-PSResource -Name $moduleName -Version $module.MinimumVersion -Repository PSGallery -Scope CurrentUser -AcceptLicense -ErrorAction Stop | Out-Null
             Write-Step "  [OK] $actionMessage completed."
+            $modulesInstalledOrUpdated++
+
+            if ($RunContext) {
+                Write-RunLog -RunContext $RunContext -Level 'Info' -Message $actionMessage -Metadata @{
+                    module          = $moduleName
+                    target_version  = $module.MinimumVersion
+                    action          = if ($installedModule) { 'Update' } else { 'Install' }
+                }
+            }
         }
         catch {
             Write-Error "Failed to install $moduleName version $($module.MinimumVersion). $_"
@@ -300,11 +339,20 @@ if ($PSCmdlet.ShouldProcess($reportPath, 'Generate PSScriptAnalyzer Report')) {
     Write-Step "[OK] PSScriptAnalyzer report saved to: $reportPath"
 }
 
-if (-not $Quiet) {
-    $errors = @($analyzerResults | Where-Object { $_.Severity -eq 'Error' })
-    $warnings = @($analyzerResults | Where-Object { $_.Severity -eq 'Warning' })
-    $info = @($analyzerResults | Where-Object { $_.Severity -eq 'Information' })
+$errors = @($analyzerResults | Where-Object { $_.Severity -eq 'Error' })
+$warnings = @($analyzerResults | Where-Object { $_.Severity -eq 'Warning' })
+$info = @($analyzerResults | Where-Object { $_.Severity -eq 'Information' })
 
+if ($RunContext) {
+    Write-RunLog -RunContext $RunContext -Level 'Info' -Message 'PSScriptAnalyzer completed' -Metadata @{
+        files_analyzed = $analysisPaths.Count
+        total_issues   = $analyzerResults.Count
+        errors         = $errors.Count
+        warnings       = $warnings.Count
+    }
+}
+
+if (-not $Quiet) {
     Write-Information "`n[PSScriptAnalyzer Summary]"
     Write-Information "  Files analyzed: $($analysisPaths.Count)"
     Write-Information "  Total Issues: $($analyzerResults.Count)"
@@ -335,14 +383,35 @@ if ($blockingFindings.Count -gt 0) {
 Write-Step "`n[OK] Prerequisite check completed successfully."
 #endregion
 
+    return [pscustomobject]@{
+        ModulesChecked            = $requiredModules.Count
+        ModulesInstalledOrUpdated = $modulesInstalledOrUpdated
+        AnalyzerIssues            = $analyzerResults.Count
+        BlockingIssues            = $blockingFindings.Count
+        AnalyzerReportPath        = $reportPath
+    }
 }
 
-$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -Quiet:$Quiet }
+$runContext = Start-RunLog -ScriptName $scriptName -ScriptVersion '1.1.0'
 
-if ($runResult.Succeeded) {
-    Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
+try {
+    $runSummary = Invoke-ScriptMain -Quiet:$Quiet -RunContext $runContext
+    Complete-RunLog -RunContext $runContext -Status 'Success' -Summary @{
+        modules_checked             = $runSummary.ModulesChecked
+        modules_installed_or_updated = $runSummary.ModulesInstalledOrUpdated
+        analyzer_issues             = $runSummary.AnalyzerIssues
+        blocking_issues             = $runSummary.BlockingIssues
+        analyzer_report_path        = $runSummary.AnalyzerReportPath
+    }
+
+    Write-Output "Prerequisite checks completed. See $($runContext.RelativeLogPath) for details."
     exit 0
-} else {
-    Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
+}
+catch {
+    $errorMessage = $_.Exception.Message
+    Write-RunLog -RunContext $runContext -Level 'Error' -Message "Prerequisite check failed: $errorMessage"
+    Complete-RunLog -RunContext $runContext -Status 'Failed'
+
+    Write-Output "Errors detected. See $($runContext.RelativeLogPath) for details."
     exit 1
 }
