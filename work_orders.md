@@ -160,3 +160,34 @@ The detailed implementation instructions for these items live in the sandbox-onl
 - Keep this file free of explicit references to development tools.
 - Assign a Type, Area, and Priority for new tasks.
 - Remove tasks promptly once complete.
+
+---
+# WO-LOGGING-001 — Centralize run logging for entrypoint scripts
+
+## Context
+
+Logging for entrypoint scripts has been inconsistent. Each script should emit a shared run log that captures dataset metadata, tenant context, correlation identifiers, and tool versions under the root `logs/` directory.
+
+---
+
+## Objective
+
+Establish a reusable run logging spine so scripts share a consistent log naming pattern, correlation IDs, and structured entries that are easy to parse.
+
+---
+
+## Tasks
+
+1. Define a minimal logging API in `modules/logging/Logging.psm1` (start, write, complete) that writes JSONL entries with correlation identifiers.
+2. Wire `scripts/ensure-prereqs.ps1` into the new logging API so prerequisite checks emit structured run logs.
+3. Wire `scripts/export-azure_scopes.ps1` into the new logging API, logging connection attempts and export counts.
+4. Update backlog and documentation (`todo.md`, `README.md`) to reflect the standardized logging pattern and remaining follow-up work.
+
+---
+
+## Acceptance Criteria
+
+- Log files follow a common pattern: `logs/<yyyyMMdd-HHmmss>-<scriptname>-run.log`.
+- Each log entry includes a correlation identifier, script/dataset metadata, and key event fields.
+- `scripts/ensure-prereqs.ps1` and `scripts/export-azure_scopes.ps1` use the shared logging API and announce the generated log path on completion.
+- Backlog and README document the logging pattern and identify remaining scripts to migrate.

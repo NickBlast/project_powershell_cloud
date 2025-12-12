@@ -1,6 +1,12 @@
 #
 # PowerShell Logging Module with Redaction and Retry Logic
 #
+# This module centralizes run logging for all entry point scripts. Callers should:
+#   1. Create a run context with Start-RunLog -ScriptName '<name>' [-DatasetName '<dataset>'] [-TenantId '<id>'] [-TenantLabel '<label>'].
+#   2. Emit structured entries with Write-RunLog -RunContext $context -Level Info|Warning|Error -Message '<event>'.
+#   3. Finalize the run with Complete-RunLog -RunContext $context -Status Success|Failed [-Summary @{ key = value }].
+#
+# Each log entry is JSONL-formatted and includes a correlation identifier so downstream analysis can stitch runs together.
 
 #region Module-Scoped Variables
 
@@ -36,6 +42,153 @@ function Protect-String {
 #endregion
 
 #region Public Functions
+
+<#
+.SYNOPSIS
+    Initializes a run log with correlation metadata and file path details.
+.DESCRIPTION
+    Creates a log file under the repository logs directory using the pattern `yyyyMMdd-HHmmss-<scriptname>-run.log`.
+    Returns a context object containing the log path, correlation identifier, and supplied metadata.
+.PARAMETER ScriptName
+    Name of the script creating the log. Used in the log file name and entries.
+.PARAMETER DatasetName
+    Optional dataset identifier associated with the run.
+.PARAMETER TenantId
+    Optional tenant identifier for the run.
+.PARAMETER TenantLabel
+    Optional tenant label for operator-friendly display.
+.PARAMETER ToolVersion
+    Optional tool version string stamped onto log entries.
+.OUTPUTS
+    [pscustomobject]
+.EXAMPLE
+    $run = Start-RunLog -ScriptName 'export-azure_scopes' -DatasetName 'azure_subscriptions'
+#>
+function Start-RunLog {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory = $true)][string]$ScriptName,
+        [string]$DatasetName,
+        [string]$TenantId,
+        [string]$TenantLabel,
+        [string]$ToolVersion
+    )
+
+    $modulesRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..')).Path
+    $repoRoot = (Resolve-Path -Path (Join-Path -Path $modulesRoot -ChildPath '..')).Path
+    $logsRoot = Join-Path -Path $repoRoot -ChildPath 'logs'
+
+    if (-not (Test-Path -Path $logsRoot)) {
+        New-Item -ItemType Directory -Path $logsRoot -Force | Out-Null
+    }
+
+    $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $sanitizedName = [System.IO.Path]::GetFileNameWithoutExtension($ScriptName)
+    $logFileName = "$timestamp-$sanitizedName-run.log"
+    $logPath = Join-Path -Path $logsRoot -ChildPath $logFileName
+    $relativeLogPath = [System.IO.Path]::GetRelativePath($repoRoot, $logPath)
+
+    $context = [pscustomobject]@{
+        CorrelationId  = [guid]::NewGuid().ToString()
+        ScriptName     = $sanitizedName
+        DatasetName    = $DatasetName
+        TenantId       = $TenantId
+        TenantLabel    = $TenantLabel
+        ToolVersion    = $ToolVersion
+        LogPath        = $logPath
+        RelativeLogPath = $relativeLogPath
+        StartedAtUtc   = [datetime]::UtcNow
+    }
+
+    if ($PSCmdlet.ShouldProcess($logPath, 'Create run log')) {
+        Write-RunLog -RunContext $context -Level Info -Message 'Run started' -Metadata @{ event = 'start' }
+    }
+    return $context
+}
+
+<#
+.SYNOPSIS
+    Writes a structured entry to a run log.
+.DESCRIPTION
+    Appends a JSONL entry that includes a timestamp, severity level, correlation identifier, and optional metadata.
+.PARAMETER RunContext
+    Run context returned from Start-RunLog.
+.PARAMETER Level
+    Log severity. Supported values: Info, Warning, Error.
+.PARAMETER Message
+    Textual description of the event being logged.
+.PARAMETER Metadata
+    Optional key/value metadata to append to the log entry.
+.EXAMPLE
+    Write-RunLog -RunContext $run -Level Info -Message 'Export started' -Metadata @{ dataset = 'azure_subscriptions' }
+#>
+function Write-RunLog {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][psobject]$RunContext,
+        [ValidateSet('Info', 'Warning', 'Error')]
+        [string]$Level = 'Info',
+        [Parameter(Mandatory = $true)][string]$Message,
+        [hashtable]$Metadata
+    )
+
+    $timestamp = [datetime]::UtcNow.ToString('o')
+    $redactedMessage = Protect-String -InputString $Message
+
+    $entry = [ordered]@{
+        timestamp      = $timestamp
+        level          = $Level
+        correlation_id = $RunContext.CorrelationId
+        script_name    = $RunContext.ScriptName
+        message        = $redactedMessage
+    }
+
+    if ($RunContext.DatasetName) { $entry['dataset_name'] = $RunContext.DatasetName }
+    if ($RunContext.TenantId) { $entry['tenant_id'] = $RunContext.TenantId }
+    if ($RunContext.TenantLabel) { $entry['tenant_label'] = $RunContext.TenantLabel }
+    if ($RunContext.ToolVersion) { $entry['tool_version'] = $RunContext.ToolVersion }
+    if ($RunContext.StartedAtUtc) { $entry['started_at_utc'] = $RunContext.StartedAtUtc.ToString('o') }
+
+    if ($Metadata) {
+        foreach ($key in $Metadata.Keys) {
+            $entry[$key] = $Metadata[$key]
+        }
+    }
+
+    $entryJson = $entry | ConvertTo-Json -Compress -Depth 6
+    Add-Content -Path $RunContext.LogPath -Value $entryJson
+}
+
+<#
+.SYNOPSIS
+    Completes a run log with final status details.
+.DESCRIPTION
+    Writes a completion entry summarizing run status and optional metrics.
+.PARAMETER RunContext
+    Run context returned from Start-RunLog.
+.PARAMETER Status
+    Final status for the run. Supported values: Success, Failed.
+.PARAMETER Summary
+    Optional summary hashtable containing counts or other metrics.
+.EXAMPLE
+    Complete-RunLog -RunContext $run -Status Success -Summary @{ rows = 10 }
+#>
+function Complete-RunLog {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][psobject]$RunContext,
+        [ValidateSet('Success', 'Failed')]
+        [string]$Status = 'Success',
+        [hashtable]$Summary
+    )
+
+    $metadata = @{ event = 'complete'; status = $Status }
+    if ($Summary) { $metadata['summary'] = $Summary }
+
+    Write-RunLog -RunContext $RunContext -Level Info -Message "Run completed with status: $Status" -Metadata $metadata
+    return $RunContext
+}
 
 <#
 .SYNOPSIS
@@ -397,6 +550,9 @@ function Write-ExportLogResult {
 #region Module Export
 
 Export-ModuleMember -Function @(
+    'Start-RunLog',
+    'Write-RunLog',
+    'Complete-RunLog',
     'New-LogContext',
     'Set-LogRedactionPattern',
     'Write-StructuredLog',

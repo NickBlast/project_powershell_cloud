@@ -45,7 +45,8 @@ Import-Module $PSScriptRoot/../modules/logging/logging.psd1 -Force
 function Invoke-ScriptMain {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
-        [switch]$Quiet
+        [switch]$Quiet,
+        [pscustomobject]$RunContext
     )
 
     #region Setup and Configuration
@@ -74,6 +75,11 @@ $repoRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..'))
 $examplesDir = Join-Path -Path $repoRoot -ChildPath 'examples'
 $reportPath = Join-Path -Path $examplesDir -ChildPath 'prereq_report.json'
 $excludedAnalyzerDirectories = @('.git', '.archive', 'examples', 'logs', 'outputs', 'reports')
+$modulesProcessed = 0
+$modulesInstalledOrUpdated = 0
+$analyzerResults = @()
+
+Write-RunLog -RunContext $RunContext -Level Info -Message 'Prerequisite validation started.' -Metadata @{ event = 'start_prereqs' }
 
 # Write-Step keeps operator-facing progress messages consistent even when Quiet/Verbose settings change.
 function Write-Step {
@@ -154,6 +160,7 @@ if ($PSVersionTable.PSVersion -lt $requiredPSVersion) {
     throw "PowerShell version $($PSVersionTable.PSVersion) is below the required $requiredPSVersion."
 }
 Write-Step "[OK] PowerShell version check passed."
+Write-RunLog -RunContext $RunContext -Level Info -Message "PowerShell version validated ($($PSVersionTable.PSVersion))." -Metadata @{ event = 'ps_version_check'; required = $requiredPSVersion.ToString() }
 #endregion
 
 #region 2. PSResourceGet Check
@@ -175,6 +182,7 @@ try {
     Import-Module -Name $psResourceModuleName -MinimumVersion $psResourceModuleVersion -ErrorAction Stop | Out-Null
     $psResourceGetModule = Get-Module -Name $psResourceModuleName
     Write-Step "[OK] $psResourceModuleName version $($psResourceGetModule.Version) is available."
+    Write-RunLog -RunContext $RunContext -Level Info -Message "$psResourceModuleName ready at version $($psResourceGetModule.Version)." -Metadata @{ event = 'psresourceget'; version = $psResourceGetModule.Version.ToString() }
 }
 catch {
     Write-Error "Failed to find, install, or import $psResourceModuleName. $_"
@@ -189,6 +197,7 @@ foreach ($module in $requiredModules) {
     $moduleName = $module.Name
     $minimumVersion = [Version]$module.MinimumVersion
     Write-Verbose "Checking module: $moduleName (minimum version: $minimumVersion)"
+    $modulesProcessed++
 
     $installedModule = Get-InstalledPSResource -Name $moduleName -ErrorAction SilentlyContinue |
         Sort-Object -Property Version -Descending |
@@ -196,6 +205,7 @@ foreach ($module in $requiredModules) {
 
     if ($installedModule -and [Version]$installedModule.Version -ge $minimumVersion) {
         Write-Step "  - $moduleName ($($installedModule.Version)) meets the minimum version requirement ($minimumVersion)."
+        Write-RunLog -RunContext $RunContext -Level Info -Message "$moduleName already satisfies minimum version." -Metadata @{ event = 'module_check'; module = $moduleName; version = $installedModule.Version.ToString(); status = 'present' }
         continue
     }
 
@@ -210,6 +220,8 @@ foreach ($module in $requiredModules) {
         try {
             Install-PSResource -Name $moduleName -Version $module.MinimumVersion -Repository PSGallery -Scope CurrentUser -AcceptLicense -ErrorAction Stop | Out-Null
             Write-Step "  [OK] $actionMessage completed."
+            $modulesInstalledOrUpdated++
+            Write-RunLog -RunContext $RunContext -Level Info -Message "$moduleName installed or updated to $minimumVersion." -Metadata @{ event = 'module_install'; module = $moduleName; target_version = $minimumVersion.ToString() }
         }
         catch {
             Write-Error "Failed to install $moduleName version $($module.MinimumVersion). $_"
@@ -298,6 +310,7 @@ else {
 if ($PSCmdlet.ShouldProcess($reportPath, 'Generate PSScriptAnalyzer Report')) {
     $analyzerResults | ConvertTo-Json -Depth 6 | Out-File -FilePath $reportPath -Encoding utf8
     Write-Step "[OK] PSScriptAnalyzer report saved to: $reportPath"
+    Write-RunLog -RunContext $RunContext -Level Info -Message 'PSScriptAnalyzer completed.' -Metadata @{ event = 'psscriptanalyzer'; files_analyzed = $analysisPaths.Count; issues = $analyzerResults.Count }
 }
 
 if (-not $Quiet) {
@@ -333,16 +346,43 @@ if ($blockingFindings.Count -gt 0) {
 }
 
 Write-Step "`n[OK] Prerequisite check completed successfully."
+Write-RunLog -RunContext $RunContext -Level Info -Message 'Prerequisite validation completed successfully.' -Metadata @{ event = 'prereq_success' }
+return [pscustomobject]@{
+    ModulesChecked          = $modulesProcessed
+    ModulesInstalledOrUpdated = $modulesInstalledOrUpdated
+    AnalyzerIssues          = $analyzerResults.Count
+}
 #endregion
 
 }
 
-$runResult = Invoke-WithRunLogging -ScriptName $scriptName -ScriptBlock { Invoke-ScriptMain -Quiet:$Quiet }
+$runContext = Start-RunLog -ScriptName $scriptName -ToolVersion '1.1.0'
+$exitCode = 0
+$runStatus = 'Success'
+$runSummary = $null
 
-if ($runResult.Succeeded) {
-    Write-Output "Execution complete. Log: $($runResult.RelativeLogPath)"
-    exit 0
-} else {
-    Write-Output "Errors detected. Check log: $($runResult.RelativeLogPath)"
-    exit 1
+try {
+    $runSummary = Invoke-ScriptMain -Quiet:$Quiet -RunContext $runContext
 }
+catch {
+    $runStatus = 'Failed'
+    $exitCode = 1
+    Write-RunLog -RunContext $runContext -Level Error -Message "Prerequisite check failed: $($_.Exception.Message)" -Metadata @{ event = 'prereq_error' }
+}
+finally {
+    $summaryPayload = @{ modules_checked = $null; modules_installed = $null; analyzer_issues = $null }
+    if ($null -ne $runSummary) {
+        $summaryPayload.modules_checked = $runSummary.ModulesChecked
+        $summaryPayload.modules_installed = $runSummary.ModulesInstalledOrUpdated
+        $summaryPayload.analyzer_issues = $runSummary.AnalyzerIssues
+    }
+    Complete-RunLog -RunContext $runContext -Status $runStatus -Summary $summaryPayload
+}
+
+if ($runStatus -eq 'Success') {
+    Write-Output "Prerequisite checks completed. See $($runContext.RelativeLogPath) for details."
+} else {
+    Write-Output "Errors detected during prerequisite check. See $($runContext.RelativeLogPath) for details."
+}
+
+exit $exitCode
