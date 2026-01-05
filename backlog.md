@@ -19,6 +19,7 @@ This file replaces the prior `todo.md` and `work_orders.md` files and serves as 
   - `MODULES`        – Shared modules (for example, connection, helpers).
   - `DOCS`           – README, runbooks, and reference documentation.
   - `SCHEMA-FUTURE`  – Schema and validation work deferred to a later phase.
+  - `APP-REG`        – Entra ID application registration script development.
 
 - **Priority**
   - `P1` – High priority / near-term.
@@ -34,6 +35,7 @@ List Work Orders here (one per line). Each Work Order should be small and focuse
 - `WO-LOGGING-001` — Centralize run logging for entrypoint scripts.
 - `WO-AUDIT-001` — Audit and migrate artifacts (example record; remove when complete).
 - `WO-TODO-001` — Restructure backlog and consolidate work orders (this file).
+- `WO-APP-REG-001` — Implement Entra ID application registration script (post_entra_app_registration.ps1).
 
 ---
 
@@ -59,6 +61,63 @@ List Work Orders here (one per line). Each Work Order should be small and focuse
 ### SCHEMA-FUTURE
 
 - [ ] [ENH][SCHEMA-FUTURE][P3] Reintroduce schema helpers only after exports stabilize.
+
+### APP-REG
+
+#### Foundation & Setup
+- [ ] [ENH][APP-REG][P1] Add comment-based help header to `scripts/post_entra_app_registration.ps1` with `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER`, `.EXAMPLE` per standards.
+- [ ] [META][APP-REG][P1] Import `Microsoft.Graph` module at script start (validate 2.9.0+ available).
+- [ ] [META][APP-REG][P1] Import `modules/logging/Logging.psm1` module via `.psd1` manifest.
+- [ ] [META][APP-REG][P1] Set `$ErrorActionPreference = 'Stop'` and initialize error handling structure.
+- [ ] [ENH][APP-REG][P1] Load `System.Windows.Forms` assembly using `[System.Reflection.Assembly]::LoadWithPartialName()`.
+
+#### Section 1: Windows Form for User Input
+- [ ] [ENH][APP-REG][P1] Create main form object with `TopMost = $true` and `StartPosition = 'CenterScreen'` properties.
+- [ ] [ENH][APP-REG][P1] Add "Business Application ID" label and TextBox control to form.
+- [ ] [ENH][APP-REG][P1] Add "Environment" label and ComboBox control with fixed items: `dv`, `qa`, `ut`, `pd`.
+- [ ] [ENH][APP-REG][P1] Add "Scope" label and ComboBox control with fixed items: `m365`, `tnr`, `mg`, `sub`, `rg`.
+- [ ] [ENH][APP-REG][P1] Add "App Name Abbreviation" label and TextBox control (max 16 chars).
+- [ ] [ENH][APP-REG][P1] Add "Access Level" label and ComboBox control with fixed items: `read`, `write`, `admin`.
+- [ ] [ENH][APP-REG][P1] Add "Description" label and multi-line TextBox control.
+- [ ] [ENH][APP-REG][P1] Add "Redirect URI (Optional)" label and TextBox control.
+- [ ] [ENH][APP-REG][P1] Add "Submit" and "Cancel" buttons with `DialogResult` properties (`OK`, `Cancel`).
+- [ ] [ENH][APP-REG][P1] Implement form validation logic (required fields non-empty, AppName <16 chars, Redirect URI format check).
+- [ ] [META][APP-REG][P1] Add form cancellation handler (log event, exit gracefully with `Write-StructuredLog`).
+
+#### Section 2: Construct & Validate Registration Name
+- [ ] [ENH][APP-REG][P1] Extract form input values into variables (`$appId`, `$env`, `$scope`, `$appName`, `$access`, `$description`, `$redirectUri`).
+- [ ] [ENH][APP-REG][P1] Validate AppId is non-empty and alphanumeric (regex check).
+- [ ] [ENH][APP-REG][P1] Validate AppName is non-empty, <16 chars, and alphanumeric (regex check).
+- [ ] [ENH][APP-REG][P1] Validate Description is non-empty.
+- [ ] [ENH][APP-REG][P1] If provided, validate Redirect URI matches URI format (regex `^https?://` or custom scheme).
+- [ ] [ENH][APP-REG][P1] Construct registration name: `$registrationName = "$appId-$env-$scope-$appName-$access"`.
+- [ ] [ENH][APP-REG][P1] Validate constructed name length is <256 chars (Entra DisplayName limit).
+- [ ] [ENH][APP-REG][P1] Validate name contains only alphanumeric + hyphens, no consecutive hyphens (regex check).
+- [ ] [ENH][APP-REG][P1] Check for duplicate app registration using `Get-MgApplication -Filter "displayName eq '$registrationName'"`.
+- [ ] [META][APP-REG][P1] Log constructed name and validation results with `Write-StructuredLog`.
+
+#### Section 3: Create Application Registration in Entra ID
+- [ ] [ENH][APP-REG][P1] Implement Graph authentication using `Connect-MgGraph -Scopes "Application.ReadWrite.All"`.
+- [ ] [ENH][APP-REG][P1] Verify authenticated context with `Get-MgContext` (check TenantId and Scopes).
+- [ ] [ENH][APP-REG][P1] Call `New-MgApplication` with `-DisplayName $registrationName`, `-SignInAudience "AzureADMyOrg"`, `-Description $description`.
+- [ ] [ENH][APP-REG][P1] If Redirect URI provided, add using `-ReplyUrls @($redirectUri)` parameter.
+- [ ] [ENH][APP-REG][P2] Optionally call `New-MgServicePrincipal -AppId $app.AppId` (confirm requirement with user).
+- [ ] [META][APP-REG][P1] Log registration success with app details (AppId, DisplayName, TenantId) via `Write-StructuredLog`.
+
+#### Error Handling & Validation
+- [ ] [META][APP-REG][P1] Wrap form creation in try/catch block with error logging.
+- [ ] [META][APP-REG][P1] Wrap name construction in try/catch block with validation failure logging.
+- [ ] [META][APP-REG][P1] Wrap Graph API calls in try/catch block with retry logic for rate limiting (HTTP 429).
+- [ ] [META][APP-REG][P1] Handle authorization errors (missing `Application.ReadWrite.All` scope) with clear error message.
+- [ ] [META][APP-REG][P1] Handle duplicate app name scenario (prompt user or exit with error).
+- [ ] [META][APP-REG][P1] Log all errors with correlation IDs, status codes, and full exception messages.
+
+#### Testing & Validation
+- [ ] [BUG][APP-REG][P1] Run `Invoke-ScriptAnalyzer` on `scripts/post_entra_app_registration.ps1` and fix all warnings.
+- [ ] [ENH][APP-REG][P2] Create Pester test for form validation logic.
+- [ ] [ENH][APP-REG][P2] Create Pester test for name construction validation.
+- [ ] [ENH][APP-REG][P2] Test script end-to-end in test tenant (dry-run with WhatIf pattern if possible).
+- [ ] [DOC][APP-REG][P2] Add example output to `examples/` folder (sanitized app registration details).
 
 ---
 
@@ -88,6 +147,15 @@ Use this section to list a small set of baseline tasks for each script/module.
 ### modules/logging/Logging.psm1
 
 - [ ] [BUG][LOGGING][P1] Ensure Start/Write/Complete log functions exist and emit consistent metadata.
+
+### scripts/post_entra_app_registration.ps1
+
+- [ ] [ENH][APP-REG][P1] Complete foundation setup (comment-based help, module imports, error handling).
+- [ ] [ENH][APP-REG][P1] Build Windows Form with all required input controls and validation.
+- [ ] [ENH][APP-REG][P1] Implement name construction and duplicate checking logic.
+- [ ] [ENH][APP-REG][P1] Implement Entra ID app registration creation with Graph API.
+- [ ] [META][APP-REG][P1] Add comprehensive error handling and structured logging throughout.
+- [ ] [BUG][APP-REG][P1] Validate script passes `Invoke-ScriptAnalyzer` with zero warnings.
 
 ---
 
