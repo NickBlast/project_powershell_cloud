@@ -17,7 +17,7 @@
   - Ensured all export modules run without schema dependencies.
   - Verified module syntax, corrected invalid comment-based help, and passed ScriptAnalyzer checks.
   - Finalized raw-exports-first design for MVP.
-- Completed WO-AUDIT-001 by migrating `audit_notes` into long-term records, removing the folder, and recording wave outcomes and follow-ups in `CHANGELOG.md` and `todo.md`:
+  - Completed WO-AUDIT-001 by migrating `audit_notes` into long-term records, removing the folder, and recording wave outcomes and follow-ups in `CHANGELOG.md` and `backlog.md`:
   - Wave 0 established a reference cache (sources of record, standards, analyzer ruleset, help authoring guidance) with a read-only posture and an MCP client proposal.
   - Wave 1 captured the initial inventory/mapping by enumerating scripts/modules/functions, drafting the command appendix, and logging follow-up questions for the appendix extraction.
   - Wave 2 validated cmdlet usage, cleaned the command appendix (removing false positives, adding module family context), and updated README dependencies while flagging a device-code parameter verification follow-up.

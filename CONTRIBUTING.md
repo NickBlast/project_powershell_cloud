@@ -36,7 +36,7 @@ If a PR affects behavior:
 
 - Update README
 - Update `/docs/`
-- Update `todo.md` (mark relevant tasks complete)
+- Update `backlog.md` (mark relevant tasks complete)
 
 ## Testing
 
