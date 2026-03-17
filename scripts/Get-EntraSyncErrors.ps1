@@ -23,11 +23,6 @@
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-if (-not (Get-Module -Name Microsoft.Graph -ListAvailable)) {
-    Write-Host "Installing Microsoft.Graph..." -ForegroundColor Cyan
-    Install-Module -Name Microsoft.Graph -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
-}
-
 # Resolve the actual Documents folder (handles OneDrive redirection on work machines)
 # and ensure the correct user module path is in this session's PSModulePath.
 $psSubfolder = if ($PSVersionTable.PSVersion.Major -ge 6) { 'PowerShell' } else { 'WindowsPowerShell' }
@@ -35,6 +30,14 @@ $userModulePath = Join-Path ([System.Environment]::GetFolderPath('MyDocuments'))
 
 if ($userModulePath -notin ($env:PSModulePath -split [System.IO.Path]::PathSeparator)) {
     $env:PSModulePath = $userModulePath + [System.IO.Path]::PathSeparator + $env:PSModulePath
+}
+
+$requiredModules = @('Microsoft.Graph.Authentication', 'Microsoft.Graph.Users', 'Microsoft.Graph.Groups')
+$missingModules  = $requiredModules | Where-Object { -not (Get-Module -Name $_ -ListAvailable) }
+
+if ($missingModules) {
+    Write-Host "Installing Microsoft.Graph (missing: $($missingModules -join ', '))..." -ForegroundColor Cyan
+    Install-Module -Name Microsoft.Graph -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
 }
 
 Import-Module Microsoft.Graph.Authentication -ErrorAction Stop
