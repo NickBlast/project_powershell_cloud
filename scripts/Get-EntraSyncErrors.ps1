@@ -26,11 +26,15 @@
 if (-not (Get-Module -Name Microsoft.Graph -ListAvailable)) {
     Write-Host "Installing Microsoft.Graph..." -ForegroundColor Cyan
     Install-Module -Name Microsoft.Graph -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
+}
 
-    # Refresh PSModulePath so the newly installed modules are discoverable this session
-    $env:PSModulePath = [System.Environment]::GetEnvironmentVariable('PSModulePath', 'User') +
-        [System.IO.Path]::PathSeparator +
-        [System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine')
+# Resolve the actual Documents folder (handles OneDrive redirection on work machines)
+# and ensure the correct user module path is in this session's PSModulePath.
+$psSubfolder = if ($PSVersionTable.PSVersion.Major -ge 6) { 'PowerShell' } else { 'WindowsPowerShell' }
+$userModulePath = Join-Path ([System.Environment]::GetFolderPath('MyDocuments')) "$psSubfolder\Modules"
+
+if ($userModulePath -notin ($env:PSModulePath -split [System.IO.Path]::PathSeparator)) {
+    $env:PSModulePath = $userModulePath + [System.IO.Path]::PathSeparator + $env:PSModulePath
 }
 
 Import-Module Microsoft.Graph.Authentication -ErrorAction Stop
