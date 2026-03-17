@@ -32,17 +32,21 @@ if ($userModulePath -notin ($env:PSModulePath -split [System.IO.Path]::PathSepar
     $env:PSModulePath = $userModulePath + [System.IO.Path]::PathSeparator + $env:PSModulePath
 }
 
-$requiredModules = @('Microsoft.Graph.Authentication', 'Microsoft.Graph.Users', 'Microsoft.Graph.Groups')
+$requiredModules = @('Microsoft.Graph.Authentication', 'Microsoft.Graph.Users', 'Microsoft.Graph.Groups', 'MSAL.PS')
 $missingModules  = $requiredModules | Where-Object { -not (Get-Module -Name $_ -ListAvailable) }
 
 if ($missingModules) {
-    Write-Host "Installing Microsoft.Graph (missing: $($missingModules -join ', '))..." -ForegroundColor Cyan
-    Install-Module -Name Microsoft.Graph -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
+    Write-Host "Installing missing modules: $($missingModules -join ', ')..." -ForegroundColor Cyan
+    foreach ($mod in $missingModules) {
+        $installName = if ($mod -like 'Microsoft.Graph*') { 'Microsoft.Graph' } else { $mod }
+        Install-Module -Name $installName -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
+    }
 }
 
 Import-Module Microsoft.Graph.Authentication -ErrorAction Stop
-Import-Module Microsoft.Graph.Users -ErrorAction Stop
-Import-Module Microsoft.Graph.Groups -ErrorAction Stop
+Import-Module Microsoft.Graph.Users         -ErrorAction Stop
+Import-Module Microsoft.Graph.Groups        -ErrorAction Stop
+Import-Module MSAL.PS                       -ErrorAction Stop
 
 Write-Host "Modules loaded." -ForegroundColor Green
 
@@ -50,18 +54,37 @@ Write-Host "Modules loaded." -ForegroundColor Green
 # 2. CONNECT
 # ============================================================================
 
-Write-Host "Connecting to Microsoft Graph (device code flow)..." -ForegroundColor Cyan
-Write-Host "A code will appear below. Visit https://microsoft.com/devicelogin, enter the code," -ForegroundColor Yellow
-Write-Host "then sign in with your secondary work account." -ForegroundColor Yellow
+# Prompt for the secondary account UPN so this script is portable.
+$secondaryAccount = Read-Host "Enter secondary account email (UPN)"
 
-# -UseDeviceCode bypasses the browser OAuth popup entirely.
-# The popup flow uses your default browser's existing SSO session and silently
-# authenticates as your primary account. Device code flow instead prints a URL
-# and one-time code here in the terminal — you open the URL manually (use an
-# InPrivate window if needed) and choose exactly which account to sign in with.
-# -ContextScope Process prevents MSAL from caching the token for the current
-# Windows user, so it won't bleed into other sessions.
-Connect-MgGraph -Scopes 'Directory.Read.All' -UseDeviceCode -ContextScope Process -NoWelcome -ErrorAction Stop
+Write-Host "Connecting to Microsoft Graph as $secondaryAccount..." -ForegroundColor Cyan
+
+# Root cause: same-tenant SSO — the browser silently completes OAuth using the
+# primary account's existing session before credentials can be entered.
+# Device code flow is blocked by Conditional Access in this tenant.
+#
+# Fix: use MSAL.PS directly with -Prompt ForceLogin + -LoginHint.
+#   -Prompt ForceLogin  → tells AAD to always demand fresh credentials, even
+#                         when an SSO session exists (equivalent to InPrivate).
+#   -LoginHint          → pre-fills the username field with the secondary account.
+#   Authorization Code flow (what MSAL.PS uses interactively) is not blocked by CA.
+#
+# The resulting access token is passed directly to Connect-MgGraph -AccessToken,
+# so no Connect-MgGraph auth flow runs at all.
+
+# '14d82eec-204b-4c2f-b7e8-296a70dab67e' is the well-known client ID for the
+# "Microsoft Graph Command Line Tools" enterprise app, present in every tenant.
+$msalToken = Get-MsalToken `
+    -ClientId   '14d82eec-204b-4c2f-b7e8-296a70dab67e' `
+    -TenantId   'organizations' `
+    -Scopes     'https://graph.microsoft.com/Directory.Read.All' `
+    -Interactive `
+    -Prompt      ForceLogin `
+    -LoginHint   $secondaryAccount `
+    -ErrorAction Stop
+
+$secureToken = $msalToken.AccessToken | ConvertTo-SecureString -AsPlainText -Force
+Connect-MgGraph -AccessToken $secureToken -NoWelcome -ErrorAction Stop
 
 Write-Host "Connected as: $((Get-MgContext).Account)" -ForegroundColor Green
 
