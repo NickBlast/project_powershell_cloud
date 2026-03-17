@@ -50,9 +50,18 @@ Write-Host "Modules loaded." -ForegroundColor Green
 # 2. CONNECT
 # ============================================================================
 
-Write-Host "Connecting to Microsoft Graph (browser sign-in)..." -ForegroundColor Cyan
+Write-Host "Connecting to Microsoft Graph (device code flow)..." -ForegroundColor Cyan
+Write-Host "A code will appear below. Visit https://microsoft.com/devicelogin, enter the code," -ForegroundColor Yellow
+Write-Host "then sign in with your secondary work account." -ForegroundColor Yellow
 
-Connect-MgGraph -Scopes 'Directory.Read.All' -NoWelcome -ErrorAction Stop
+# -UseDeviceCode bypasses the browser OAuth popup entirely.
+# The popup flow uses your default browser's existing SSO session and silently
+# authenticates as your primary account. Device code flow instead prints a URL
+# and one-time code here in the terminal — you open the URL manually (use an
+# InPrivate window if needed) and choose exactly which account to sign in with.
+# -ContextScope Process prevents MSAL from caching the token for the current
+# Windows user, so it won't bleed into other sessions.
+Connect-MgGraph -Scopes 'Directory.Read.All' -UseDeviceCode -ContextScope Process -NoWelcome -ErrorAction Stop
 
 Write-Host "Connected as: $((Get-MgContext).Account)" -ForegroundColor Green
 
