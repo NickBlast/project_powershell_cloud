@@ -32,12 +32,15 @@ foreach ($mod in $modules) {
     if (-not (Get-Module -Name $mod -ListAvailable)) {
         Write-Host "Installing $mod..." -ForegroundColor Cyan
         Install-Module -Name $mod -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
-    }
-}
 
-Import-Module Microsoft.Graph.Authentication -ErrorAction Stop
-Import-Module Microsoft.Graph.Users -ErrorAction Stop
-Import-Module Microsoft.Graph.Groups -ErrorAction Stop
+        # Refresh PSModulePath so the newly installed module is discoverable this session
+        $env:PSModulePath = [System.Environment]::GetEnvironmentVariable('PSModulePath', 'User') +
+            [System.IO.Path]::PathSeparator +
+            [System.Environment]::GetEnvironmentVariable('PSModulePath', 'Machine')
+    }
+
+    Import-Module $mod -ErrorAction Stop
+}
 
 Write-Host "Modules loaded." -ForegroundColor Green
 
