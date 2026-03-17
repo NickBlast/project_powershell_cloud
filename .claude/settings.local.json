@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "mcp__microsoft-learn__microsoft_docs_search"
+    ]
+  }
+}
