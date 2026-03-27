@@ -54,34 +54,127 @@ Write-Host "Modules loaded." -ForegroundColor Green
 # 2. CONNECT
 # ============================================================================
 
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
+# GUI input dialog — used instead of Read-Host so all user prompts are popup
+# windows (required for portability on machines where the console may be hidden
+# or where Read-Host is undesirable). Returns $null if the user cancels or
+# closes the dialog without entering a value.
+function Show-InputDialog {
+    param(
+        [string]$Prompt,
+        [string]$Title = 'Input Required'
+    )
+    $form                 = New-Object System.Windows.Forms.Form
+    $form.Text            = $Title
+    $form.Size            = New-Object System.Drawing.Size(420, 155)
+    $form.StartPosition   = 'CenterScreen'
+    $form.FormBorderStyle = 'FixedDialog'
+    $form.MaximizeBox     = $false
+    $form.MinimizeBox     = $false
+    $form.TopMost         = $true
+
+    $label          = New-Object System.Windows.Forms.Label
+    $label.Text     = $Prompt
+    $label.Location = New-Object System.Drawing.Point(12, 14)
+    $label.Size     = New-Object System.Drawing.Size(384, 20)
+    $form.Controls.Add($label)
+
+    $textBox          = New-Object System.Windows.Forms.TextBox
+    $textBox.Location = New-Object System.Drawing.Point(12, 40)
+    $textBox.Size     = New-Object System.Drawing.Size(384, 22)
+    $form.Controls.Add($textBox)
+
+    $okBtn              = New-Object System.Windows.Forms.Button
+    $okBtn.Text         = 'OK'
+    $okBtn.Location     = New-Object System.Drawing.Point(220, 74)
+    $okBtn.Size         = New-Object System.Drawing.Size(85, 28)
+    $okBtn.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    $form.Controls.Add($okBtn)
+    $form.AcceptButton  = $okBtn
+
+    $cancelBtn              = New-Object System.Windows.Forms.Button
+    $cancelBtn.Text         = 'Cancel'
+    $cancelBtn.Location     = New-Object System.Drawing.Point(311, 74)
+    $cancelBtn.Size         = New-Object System.Drawing.Size(85, 28)
+    $cancelBtn.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+    $form.Controls.Add($cancelBtn)
+    $form.CancelButton      = $cancelBtn
+
+    $result = $form.ShowDialog()
+    $form.Dispose()
+
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK -and
+        -not [string]::IsNullOrWhiteSpace($textBox.Text)) {
+        return $textBox.Text.Trim()
+    }
+    return $null
+}
+
 # Prompt for the secondary account UPN so this script is portable.
-$secondaryAccount = Read-Host "Enter secondary account email (UPN)"
+$secondaryAccount = Show-InputDialog `
+    -Prompt 'Enter the secondary admin account email (UPN):' `
+    -Title  'Secondary Account — Entra Sync Error Export'
+
+if (-not $secondaryAccount) {
+    Write-Warning 'No account entered. Exiting.'
+    exit
+}
 
 Write-Host "Connecting to Microsoft Graph as $secondaryAccount..." -ForegroundColor Cyan
 
-# Root cause: same-tenant SSO — the browser silently completes OAuth using the
-# primary account's existing session before credentials can be entered.
-# Device code flow is blocked by Conditional Access in this tenant.
+# Root cause: same-tenant SSO — AAD silently completes OAuth using the primary
+# account's existing browser session before credentials can be entered. On
+# Entra-joined devices, the device-bound account can also be injected through
+# the OS account system (WAM/broker layer).
 #
-# Fix: use MSAL.PS directly with -Prompt ForceLogin + -LoginHint.
-#   -Prompt ForceLogin  → tells AAD to always demand fresh credentials, even
-#                         when an SSO session exists (equivalent to InPrivate).
-#   -LoginHint          → pre-fills the username field with the secondary account.
-#   Authorization Code flow (what MSAL.PS uses interactively) is not blocked by CA.
+# Device code flow is blocked by Conditional Access in this tenant.
+# Authorization Code flow (what MSAL.PS uses interactively) is allowed.
+#
+# Fix:
+#   -Prompt ForceLogin        → sends prompt=login to the IdP, breaking any
+#                               existing SSO session in the web view. This is
+#                               Prompt.ForceLogin in MSAL.NET — the correct field
+#                               name (there is no Prompt.Login). Confirmed via
+#                               MSAL.NET API docs.
+#   -LoginHint                → pre-fills the UPN at the Okta login page so the
+#                               user only has to enter their password. NOTE: login_hint
+#                               alone does NOT skip AAD's own credential form —
+#                               that is what domain_hint is for (see below).
+#   -ExtraQueryParameters     → domain_hint tells AAD to skip Home Realm Discovery
+#                               (its own credential form) and redirect immediately
+#                               to the Okta federated IdP for $domain. This is the
+#                               key fix for the double-prompt: without it AAD renders
+#                               its own password field first, then redirects to Okta,
+#                               resulting in two credential prompts. Confirmed via
+#                               MS identity platform OAuth2 auth code flow docs.
+#                               If $domain is not a verified federated domain in the
+#                               tenant, AAD silently ignores the hint — no error.
+#
+# WAM note: WAM requires an explicit WithBroker() call in MSAL.NET and is NOT
+# enabled by MSAL.PS. WAM also does not support third-party IdPs (Okta) per
+# MS docs ("WAM supports only Microsoft Entra ID"). Device-broker interference
+# therefore does not apply to this MSAL.PS flow.
 #
 # The resulting access token is passed directly to Connect-MgGraph -AccessToken,
 # so no Connect-MgGraph auth flow runs at all.
 
+# Extract the domain portion of the UPN for domain_hint (e.g. "contoso.com").
+# Split('@')[1] is safe here because the null/empty guard above already exited.
+$domain = $secondaryAccount.Split('@')[1]
+
 # '14d82eec-204b-4c2f-b7e8-296a70dab67e' is the well-known client ID for the
 # "Microsoft Graph Command Line Tools" enterprise app, present in every tenant.
 $msalToken = Get-MsalToken `
-    -ClientId   '14d82eec-204b-4c2f-b7e8-296a70dab67e' `
-    -TenantId   'organizations' `
-    -Scopes     'https://graph.microsoft.com/Directory.Read.All' `
+    -ClientId            '14d82eec-204b-4c2f-b7e8-296a70dab67e' `
+    -TenantId            'organizations' `
+    -Scopes              'https://graph.microsoft.com/Directory.Read.All' `
     -Interactive `
-    -Prompt      ForceLogin `
-    -LoginHint   $secondaryAccount `
-    -ErrorAction Stop
+    -Prompt               ForceLogin `
+    -LoginHint            $secondaryAccount `
+    -ExtraQueryParameters @{ domain_hint = $domain } `
+    -ErrorAction          Stop
 
 $secureToken = $msalToken.AccessToken | ConvertTo-SecureString -AsPlainText -Force
 Connect-MgGraph -AccessToken $secureToken -NoWelcome -ErrorAction Stop
