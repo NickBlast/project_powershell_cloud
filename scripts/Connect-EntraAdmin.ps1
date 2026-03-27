@@ -179,43 +179,64 @@ Write-Host ""
 # ============================================================================
 # 4. AUTHENTICATE
 # ============================================================================
-# Parameter notes:
 #
-#   -Scopes
-#       Requested delegated permissions. MSAL presents a consent prompt if the
-#       tenant admin has not pre-consented; for admin accounts this is usually
-#       pre-consented for the Microsoft Graph PowerShell enterprise app.
+# WHY DEVICE CODE FLOW IS ALWAYS USED — DO NOT CHANGE TO INTERACTIVE BROWSER
+# ---------------------------------------------------------------------------
+# On Windows 10+, the Microsoft Graph PowerShell SDK enables Web Account
+# Manager (WAM) by default. WAM is an OS-level authentication broker that
+# intercepts the interactive browser auth flow and injects the currently
+# active Windows session identity (the regular non-admin account) regardless
+# of which admin UPN was entered above.
 #
-#   -TenantId
-#       Restricts auth to the specified tenant. Required — without this, MSAL
-#       targets the 'common' endpoint, which can resolve to the wrong tenant
-#       when the account has access to multiple tenants.
+# Set-MgGraphOption -EnableLoginByWAM $false is documented in SDK examples
+# but does NOT reliably suppress WAM on current SDK versions. Do not add it.
 #
-#   -ContextScope Process
-#       Isolates the token cache to this PowerShell process only.
-#       Prevents: (1) loading stale cached tokens from the regular non-admin
-#       account's CurrentUser cache, (2) writing admin tokens to the shared
-#       on-disk cache where other processes could pick them up.
+# Device code flow (-UseDeviceCode) bypasses WAM entirely. MSAL prints a URL
+# and a one-time code to the terminal; the operator completes authentication
+# in any browser tab at microsoft.com/devicelogin. WAM has no involvement in
+# this path — explicit account selection is always presented.
 #
-#   -UseDeviceCode
-#       Added conditionally — only when the caller passes -UseDeviceCode.
-#       When active, prints a URL + one-time code to the console.
+# -TenantId must still be passed alongside -UseDeviceCode. Without it, MSAL
+# targets the 'common' endpoint and may authenticate to the wrong tenant when
+# the admin account has access to multiple tenants (e.g., QA vs. Production).
 #
-#   -NoWelcome
-#       Suppresses the "Welcome To Microsoft Graph!" banner so console output
-#       stays predictable. Requires Microsoft.Graph.Authentication >= 1.22.0;
-#       remove this parameter if you are on an older SDK version.
+# Other parameter notes:
+#   -Scopes              Requested delegated permissions. MSAL presents a
+#                        consent prompt if the tenant admin has not pre-consented;
+#                        for admin accounts this is usually pre-consented for the
+#                        Microsoft Graph PowerShell enterprise app.
+#   -ContextScope Process  Prevents loading cached tokens from the regular
+#                          account's on-disk CurrentUser token cache, and
+#                          prevents writing admin tokens back to that cache.
+#   -NoWelcome           Suppresses the "Welcome To Microsoft Graph!" banner.
+#                        Requires Microsoft.Graph.Authentication >= 1.22.0.
+#                        Remove this line if you are on an older SDK version.
+#
+# Note: the -UseDeviceCode switch parameter is preserved in the script
+# signature for clarity, but its value is not read here — device code is
+# always forced. Passing -UseDeviceCode on the command line is a no-op.
+
+Write-Host "--- Sign-in steps ---" -ForegroundColor White
+Write-Host ""
+Write-Host "  1. A one-time code will appear in this terminal in a moment."           -ForegroundColor White
+Write-Host "  2. Open an incognito browser tab and navigate to:"                      -ForegroundColor White
+Write-Host "       https://microsoft.com/devicelogin"                                 -ForegroundColor Cyan
+Write-Host "  3. Enter the code exactly as shown (codes are case-sensitive)."         -ForegroundColor White
+Write-Host "  4. When prompted to choose an account, sign in as:"                     -ForegroundColor White
+Write-Host "       $adminUpn"                                                         -ForegroundColor Cyan
+Write-Host "  5. Enter your CyberArk password at the password prompt."                -ForegroundColor White
+Write-Host "  6. Entra will redirect to Okta automatically — do not close the tab."   -ForegroundColor White
+Write-Host "  7. Approve the Okta Verify push notification on your iPhone (Face ID)." -ForegroundColor White
+Write-Host "  8. Once the browser confirms sign-in, return here."                     -ForegroundColor White
+Write-Host ""
 
 $connectParams = @{
-    Scopes       = $Scopes
-    TenantId     = $TenantId
-    ContextScope = 'Process'
-    NoWelcome    = $true
-    ErrorAction  = 'Stop'
-}
-
-if ($UseDeviceCode) {
-    $connectParams['UseDeviceCode'] = $true
+    Scopes        = $Scopes
+    TenantId      = $TenantId
+    ContextScope  = 'Process'
+    UseDeviceCode = $true       # Always forced — WAM bypass. See comment block above.
+    NoWelcome     = $true
+    ErrorAction   = 'Stop'
 }
 
 try {
@@ -228,7 +249,7 @@ catch {
     Write-Host ""
     Write-Host "Common causes:"                                                           -ForegroundColor Yellow
     Write-Host "  - MFA prompt timed out or was denied on Okta Verify"                   -ForegroundColor Yellow
-    Write-Host "  - Browser/device code flow was closed before completing sign-in"       -ForegroundColor Yellow
+    Write-Host "  - Device code page was closed before completing sign-in"               -ForegroundColor Yellow
     Write-Host "  - Tenant ID is incorrect (check Entra admin center > Overview)"        -ForegroundColor Yellow
     Write-Host "  - Admin consent has not been granted for the Microsoft Graph PS app"   -ForegroundColor Yellow
     return $null
