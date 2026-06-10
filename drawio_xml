@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ============================================================ -->
+    <!-- LEGEND                                                         -->
+    <!-- ============================================================ -->
+    <mxCell id="legend_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="40" y="40" width="220" height="240" as="geometry" />
+    </mxCell>
+    <mxCell id="legend_title" value="Legend" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="40" y="44" width="220" height="24" as="geometry" />
+    </mxCell>
+    <mxCell id="leg1" value="" style="endArrow=block;endFill=1;strokeColor=#0066CC;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1">
+      <mxGeometry x="55" y="80" width="60" height="10" as="geometry">
+        <mxPoint x="55" y="84" as="sourcePoint" />
+        <mxPoint x="105" y="84" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="leg1_lbl" value="LDAP / Kerberos (TCP 389/636)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="110" y="72" width="145" height="24" as="geometry" />
+    </mxCell>
+    <mxCell id="leg2" value="" style="endArrow=block;endFill=1;strokeColor=#007700;strokeWidth=2;dashed=0;" edge="1" parent="1">
+      <mxGeometry x="55" y="108" width="60" height="10" as="geometry">
+        <mxPoint x="55" y="112" as="sourcePoint" />
+        <mxPoint x="105" y="112" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="leg2_lbl" value="HTTPS / TLS 1.2+ (TCP 443)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="110" y="100" width="145" height="24" as="geometry" />
+    </mxCell>
+    <mxCell id="leg3" value="" style="endArrow=block;endFill=1;strokeColor=#CC6600;strokeWidth=2;dashed=0;" edge="1" parent="1">
+      <mxGeometry x="55" y="136" width="60" height="10" as="geometry">
+        <mxPoint x="55" y="140" as="sourcePoint" />
+        <mxPoint x="105" y="140" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="leg3_lbl" value="SQL / TDS (TCP 1433, TLS)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="110" y="128" width="145" height="24" as="geometry" />
+    </mxCell>
+    <mxCell id="leg4" value="" style="endArrow=block;endFill=1;strokeColor=#9933CC;strokeWidth=2;dashed=1;" edge="1" parent="1">
+      <mxGeometry x="55" y="164" width="60" height="10" as="geometry">
+        <mxPoint x="55" y="168" as="sourcePoint" />
+        <mxPoint x="105" y="168" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="leg4_lbl" value="Staging (read-only, no export)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="110" y="156" width="145" height="24" as="geometry" />
+    </mxCell>
+    <mxCell id="leg5_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="55" y="192" width="20" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="leg5_lbl" value="On-Premises boundary" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="82" y="187" width="170" height="24" as="geometry" />
+    </mxCell>
+    <mxCell id="leg6_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="55" y="218" width="20" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="leg6_lbl" value="Microsoft Entra ID (cloud)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="82" y="213" width="170" height="24" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- ON-PREMISES BOUNDARY                                           -->
+    <!-- ============================================================ -->
+    <mxCell id="onprem_bg" value="On-Premises Datacenter" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontStyle=1;fontSize=13;align=left;horizontal=1;swimlaneLine=1;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="310" width="1130" height="790" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- AD DS DOMAIN CONTROLLERS                                       -->
+    <!-- ============================================================ -->
+    <mxCell id="ad_zone" value="Active Directory Domain Services" style="swimlane;startSize=28;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontStyle=1;fontSize=11;align=left;rounded=1;" vertex="1" parent="onprem_bg">
+      <mxGeometry x="30" y="60" width="340" height="310" as="geometry" />
+    </mxCell>
+
+    <mxCell id="dc1" value="Domain Controller (Primary)" style="shape=server;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=1;" vertex="1" parent="ad_zone">
+      <mxGeometry x="40" y="50" width="120" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="dc1_sub" value="PDC Emulator / RID Master&#xa;Kerberos KDC&#xa;Replication partner" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;fontSize=9;" vertex="1" parent="ad_zone">
+      <mxGeometry x="10" y="135" width="180" height="50" as="geometry" />
+    </mxCell>
+
+    <mxCell id="dc2" value="Domain Controller (Secondary)" style="shape=server;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=1;" vertex="1" parent="ad_zone">
+      <mxGeometry x="200" y="50" width="120" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="dc2_sub" value="GC / Additional KDC&#xa;Replication partner" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;fontSize=9;" vertex="1" parent="ad_zone">
+      <mxGeometry x="170" y="135" width="150" height="50" as="geometry" />
+    </mxCell>
+
+    <mxCell id="ad_svc_acct" value="ADSync Service Account&#xa;(Domain User — NOT Domain Admin)&#xa;Delegated via ADSyncConfig.psm1&#xa;Replicating Directory Changes All *" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=9;align=left;verticalAlign=top;" vertex="1" parent="ad_zone">
+      <mxGeometry x="30" y="200" width="285" height="80" as="geometry" />
+    </mxCell>
+
+    <mxCell id="ad_svc_note" value="* Required for Password Hash Sync.&#xa;Not available via any built-in AD group." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=8;fontStyle=2;" vertex="1" parent="ad_zone">
+      <mxGeometry x="30" y="282" width="285" height="24" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- ENTRA CONNECT — ACTIVE SERVER                                  -->
+    <!-- ============================================================ -->
+    <mxCell id="ec_active_zone" value="Entra Connect — Active Server (NPDARSVRMSS201P)" style="swimlane;startSize=28;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontStyle=1;fontSize=11;align=left;rounded=1;" vertex="1" parent="onprem_bg">
+      <mxGeometry x="400" y="60" width="380" height="490" as="geometry" />
+    </mxCell>
+
+    <mxCell id="ec_active_srv" value="Entra Connect Server&#xa;v2.6.1.0 (target)&#xa;Windows Server 2019" style="shape=server;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontStyle=1;" vertex="1" parent="ec_active_zone">
+      <mxGeometry x="130" y="40" width="120" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- Sync Engine -->
+    <mxCell id="sync_engine" value="Sync Engine (Core)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontStyle=1;" vertex="1" parent="ec_active_zone">
+      <mxGeometry x="30" y="135" width="320" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- AD Connector -->
+    <mxCell id="ad_connector" value="AD Connector Space&#xa;(AD DS Connector)&#xa;LDAP / Kerberos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;align=left;" vertex="1" parent="ec_active_zone">
+      <mxGeometry x="30" y="185" width="145" height="75" as="geometry" />
+    </mxCell>
+
+    <!-- AAD Connector -->
+    <mxCell id="aad_connector" value="Entra ID Connector Space&#xa;(Azure AD Connector)&#xa;HTTPS / TLS 1.2+" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;align=left;" vertex="1" parent="ec_active_zone">
+      <mxGeometry x="205" y="185" width="145" height="75" as="geometry" />
+    </mxCell>
+
+    <!-- Metaverse -->
+    <mxCell id="metaverse" value="Metaverse (MV)&#xa;Unified identity store&#xa;Attribute flow rules applied here" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;align=left;" vertex="1" parent="ec_active_zone">
+      <mxGeometry x="90" y="285" width="200" height="65" as="geometry" />
+    </mxCell>
+
+    <!-- Sync Rules -->
+    <mxCell id="sync_rules" value="Sync Rules Engine&#xa;Inbound: AD → MV&#xa;Outbound: MV → Entra ID&#xa;Custom rules via .ps1 export" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;align=left;" vertex="1" parent="ec_active_zone">
+      <mxGeometry x="30" y="375" width="200" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- PHS Component -->
+    <mxCell id="phs_component" value="Password Hash Sync (PHS)&#xa;Intercepts NTLM hash change events&#xa;Double-hashes with PBKDF2-SHA256&#xa;Encrypted payload → Entra ID" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;align=left;" vertex="1" parent="ec_active_zone">
+      <mxGeometry x="240" y="375" width="120" height="95" as="geometry" />
+    </mxCell>
+
+    <!-- Scheduler -->
+    <mxCell id="scheduler" value="Sync Scheduler&#xa;Default: 30-min delta&#xa;Set-ADSyncScheduler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=9;align=left;" vertex="1" parent="ec_active_zone">
+      <mxGeometry x="30" y="460" width="150" height="20" as="geometry" />
+    </mxCell>
+
+    <mxCell id="wap_note" value="TCP 443 outbound only — no inbound ports required&#xa;Proxy supported; direct required for AAD endpoints" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=8;fontStyle=2;" vertex="1" parent="ec_active_zone">
+      <mxGeometry x="30" y="484" width="340" height="24" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- ENTRA CONNECT — STAGING SERVER                                 -->
+    <!-- ============================================================ -->
+    <mxCell id="ec_staging_zone" value="Entra Connect — Staging Server" style="swimlane;startSize=28;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=1.5;fontStyle=1;fontSize=11;align=left;rounded=1;dashed=1;" vertex="1" parent="onprem_bg">
+      <mxGeometry x="400" y="575" width="380" height="190" as="geometry" />
+    </mxCell>
+
+    <mxCell id="ec_staging_srv" value="Staging Server&#xa;v2.6.1.0 (target)&#xa;Windows Server 2019" style="shape=server;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="ec_staging_zone">
+      <mxGeometry x="130" y="40" width="120" height="70" as="geometry" />
+    </mxCell>
+    <mxCell id="staging_note" value="Staging mode: imports and full sync run normally.&#xa;Exports to Entra ID DISABLED (StagingModeEnabled=True).&#xa;Promotes to Active via wizard — no sync downtime.&#xa;Shares same SQL instance (separate DB or same ADSync DB)." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=9;" vertex="1" parent="ec_staging_zone">
+      <mxGeometry x="20" y="118" width="350" height="62" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- REMOTE SQL SERVER                                              -->
+    <!-- ============================================================ -->
+    <mxCell id="sql_zone" value="Remote SQL Server Instance" style="swimlane;startSize=28;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=2;fontStyle=1;fontSize=11;align=left;rounded=1;" vertex="1" parent="onprem_bg">
+      <mxGeometry x="810" y="60" width="290" height="490" as="geometry" />
+    </mxCell>
+
+    <mxCell id="sql_srv" value="SQL Server 2019 / 2022&#xa;(Full Edition)" style="shape=server;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;fontStyle=1;" vertex="1" parent="sql_zone">
+      <mxGeometry x="85" y="40" width="120" height="70" as="geometry" />
+    </mxCell>
+
+    <mxCell id="sql_adsync_db" value="ADSync Database&#xa;(ADSync.mdf / ADSync_log.ldf)&#xa;Recovery model: SIMPLE&#xa;Collation: SQL_Latin1_General_CP1_CI_AS" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=9;align=left;" vertex="1" parent="sql_zone">
+      <mxGeometry x="50" y="140" width="190" height="85" as="geometry" />
+    </mxCell>
+
+    <mxCell id="sql_instance_cfg" value="Instance Configuration&#xa;——————————&#xa;Protocol: TCP/IP enabled&#xa;Named Pipes: DISABLED&#xa;Port: TCP 1433 (default)&#xa;TLS encryption: Required&#xa;Max memory: configured&#xa;(leave 2-4 GB for OS + EC)&#xa;SQL Agent: Maintenance jobs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;align=left;verticalAlign=top;" vertex="1" parent="sql_zone">
+      <mxGeometry x="20" y="245" width="250" height="145" as="geometry" />
+    </mxCell>
+
+    <mxCell id="sql_perms" value="Service Account Permissions&#xa;ADSync svc account → db_owner on ADSync DB&#xa;SQL Login: Windows Authentication" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=9;align=left;" vertex="1" parent="sql_zone">
+      <mxGeometry x="20" y="405" width="250" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- NETWORK LAYER / FIREWALL NOTES                                 -->
+    <!-- ============================================================ -->
+    <mxCell id="net_zone" value="Network / Firewall Policy Notes" style="swimlane;startSize=28;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=1;fontStyle=1;fontSize=10;align=left;rounded=1;" vertex="1" parent="onprem_bg">
+      <mxGeometry x="30" y="685" width="760" height="90" as="geometry" />
+    </mxCell>
+    <mxCell id="net_notes" value="Entra Connect → AD DC: TCP 389 (LDAP), TCP 636 (LDAPS), TCP 3268/3269 (GC), TCP/UDP 88 (Kerberos), TCP 445 (SMB/AD replication awareness), UDP 53 (DNS)&#xa;Entra Connect → SQL Server: TCP 1433 (TDS/TLS) — Windows auth (Kerberos) — host firewall rule required if SQL is remote VM&#xa;Entra Connect → Entra ID: TCP 443 outbound only — Azure AD / Graph endpoints — no inbound ports opened on-prem&#xa;Staging server uses identical outbound rules but SQL connection and AD reads are active; Entra ID export is suppressed by engine." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=9;" vertex="1" parent="net_zone">
+      <mxGeometry x="10" y="32" width="740" height="52" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- ENTRA ID CLOUD BOUNDARY                                        -->
+    <!-- ============================================================ -->
+    <mxCell id="cloud_bg" value="Microsoft Entra ID (Cloud — Azure)" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontStyle=1;fontSize=13;align=left;horizontal=1;swimlaneLine=1;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="1220" y="310" width="400" height="790" as="geometry" />
+    </mxCell>
+
+    <!-- Entra Tenant -->
+    <mxCell id="entra_tenant" value="Entra ID Tenant&#xa;firstcitizens.onmicrosoft.com" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="cloud_bg">
+      <mxGeometry x="20" y="50" width="360" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- Directory Partition -->
+    <mxCell id="entra_directory" value="Directory (User / Group / Device Objects)&#xa;Source of Authority: on-premises AD&#xa;(sourceAnchor / ImmutableID)" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="cloud_bg">
+      <mxGeometry x="40" y="125" width="320" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- PHS Endpoint -->
+    <mxCell id="entra_phs" value="Password Hash Store&#xa;(cloud-side PHS endpoint)&#xa;PBKDF2-SHA256 hashed&#xa;Enables cloud auth for synced users" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;align=left;" vertex="1" parent="cloud_bg">
+      <mxGeometry x="40" y="230" width="200" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- Entra Connect Health -->
+    <mxCell id="entra_health" value="Entra Connect Health&#xa;Monitoring agent telemetry&#xa;entra.microsoft.com &gt; Monitoring&#xa;Both servers must report healthy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=left;" vertex="1" parent="cloud_bg">
+      <mxGeometry x="255" y="230" width="125" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- Conditional Access -->
+    <mxCell id="entra_ca" value="Conditional Access Policies&#xa;Evaluated at token issuance&#xa;(device compliance, MFA, location)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;align=left;" vertex="1" parent="cloud_bg">
+      <mxGeometry x="40" y="335" width="180" height="65" as="geometry" />
+    </mxCell>
+
+    <!-- Graph API -->
+    <mxCell id="entra_graph" value="Microsoft Graph API&#xa;(HTTPS / TLS 1.2+)&#xa;graph.microsoft.com" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;align=left;" vertex="1" parent="cloud_bg">
+      <mxGeometry x="235" y="335" width="145" height="65" as="geometry" />
+    </mxCell>
+
+    <!-- App Registration -->
+    <mxCell id="entra_appreg" value="App Registration (EntraIAM)&#xa;Client secret auth (current)&#xa;Cert auth (roadmap)&#xa;Microsoft.Graph.Authentication SDK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=left;" vertex="1" parent="cloud_bg">
+      <mxGeometry x="40" y="425" width="200" height="75" as="geometry" />
+    </mxCell>
+
+    <!-- Hybrid Identity Admin -->
+    <mxCell id="entra_admin" value="Hybrid Identity Admin&#xa;(@*.onmicrosoft.com acct)&#xa;Required for wizard / MSI install" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=9;align=left;" vertex="1" parent="cloud_bg">
+      <mxGeometry x="250" y="425" width="130" height="75" as="geometry" />
+    </mxCell>
+
+    <!-- Write-back (future) -->
+    <mxCell id="entra_wb" value="Writeback Channels (optional)&#xa;Password writeback (SSPR)&#xa;Group writeback&#xa;Device writeback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=9;align=left;dashed=1;" vertex="1" parent="cloud_bg">
+      <mxGeometry x="40" y="525" width="200" height="75" as="geometry" />
+    </mxCell>
+
+    <!-- Cross-tenant note -->
+    <mxCell id="entra_xtenancy" value="QA Tenant: firstcitizens4.onmicrosoft.com&#xa;Separate isolated tenant — not depicted here&#xa;Identical topology; separate EC instance" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=9;fontStyle=2;" vertex="1" parent="cloud_bg">
+      <mxGeometry x="20" y="620" width="360" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- Encryption summary box -->
+    <mxCell id="enc_summary" value="Encryption in Transit&#xa;——————————&#xa;On-prem → Entra ID: TLS 1.2 minimum (TLS 1.3 preferred)&#xa;PHS payload: PBKDF2-SHA256 + AES-256 envelope&#xa;EC → SQL: TDS over TLS 1.2 (SQL Server cert or domain cert)&#xa;LDAP: Kerberos sign+seal or LDAPS (TCP 636)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;align=left;verticalAlign=top;" vertex="1" parent="cloud_bg">
+      <mxGeometry x="20" y="685" width="360" height="85" as="geometry" />
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- DATA FLOW ARROWS                                               -->
+    <!-- ============================================================ -->
+
+    <!-- AD DC → AD Connector Space (LDAP read) -->
+    <mxCell id="flow_ad_to_cs" value="LDAP Read / Import&#xa;TCP 389 (LDAP) / TCP 636 (LDAPS)&#xa;Kerberos auth (svc acct)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#0066CC;strokeWidth=2;fontSize=9;fontColor=#0066CC;" edge="1" source="dc1" target="ad_connector" parent="onprem_bg">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- AD Connector ↔ Metaverse (internal sync) -->
+    <mxCell id="flow_cs_to_mv" value="Attribute flow&#xa;(inbound rules)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;strokeWidth=1.5;fontSize=9;fontColor=#9673a6;dashed=0;" edge="1" source="ad_connector" target="metaverse" parent="ec_active_zone">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Metaverse ↔ AAD Connector Space (internal sync) -->
+    <mxCell id="flow_mv_to_aad" value="Attribute flow&#xa;(outbound rules)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;strokeWidth=1.5;fontSize=9;fontColor=#9673a6;dashed=0;" edge="1" source="metaverse" target="aad_connector" parent="ec_active_zone">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- AAD Connector → Entra ID (HTTPS export) -->
+    <mxCell id="flow_aad_to_cloud" value="Entra ID Connector Export&#xa;HTTPS / TLS 1.2+, TCP 443&#xa;Azure AD Sync API&#xa;Object delta, attribute updates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeColor=#007700;strokeWidth=2;fontSize=9;fontColor=#007700;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" source="ec_active_zone" target="cloud_bg" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1170" y="560" />
+          <mxPoint x="1200" y="560" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- PHS flow label -->
+    <mxCell id="flow_phs" value="Password Hash Sync&#xa;HTTPS / TLS 1.2+, TCP 443&#xa;PBKDF2-SHA256 double-hash&#xa;Never plaintext password" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#b85450;strokeWidth=2;fontSize=9;fontColor=#b85450;dashed=0;" edge="1" source="phs_component" target="entra_phs" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1150" y="820" />
+          <mxPoint x="1200" y="820" />
+          <mxPoint x="1200" y="572" />
+          <mxPoint x="1380" y="572" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- EC Active → SQL (TDS/TLS) -->
+    <mxCell id="flow_ec_sql" value="ADSync DB connection&#xa;TCP 1433 (TDS over TLS 1.2)&#xa;Windows auth (Kerberos)&#xa;db_owner on ADSync DB" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeColor=#CC6600;strokeWidth=2;fontSize=9;fontColor=#CC6600;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" edge="1" source="ec_active_zone" target="sql_zone" parent="onprem_bg">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- EC Staging → SQL (TDS/TLS) -->
+    <mxCell id="flow_stg_sql" value="ADSync DB connection&#xa;(same instance, staging read)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeColor=#CC6600;strokeWidth=1.5;fontSize=9;fontColor=#CC6600;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.7;entryDx=0;entryDy=0;" edge="1" source="ec_staging_zone" target="sql_zone" parent="onprem_bg">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Staging → AD DC (LDAP read, staging) -->
+    <mxCell id="flow_stg_ad" value="LDAP Read (staging — imports only)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9933CC;strokeWidth=1.5;fontSize=9;fontColor=#9933CC;dashed=1;" edge="1" source="ec_staging_zone" target="dc2" parent="onprem_bg">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="590" y="740" />
+          <mxPoint x="590" y="760" />
+          <mxPoint x="200" y="760" />
+          <mxPoint x="200" y="400" />
+          <mxPoint x="280" y="400" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Staging → Entra ID (blocked — dashed, labeled) -->
+    <mxCell id="flow_stg_cloud" value="Export SUPPRESSED&#xa;(StagingModeEnabled=True)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9933CC;strokeWidth=1.5;fontSize=9;fontColor=#9933CC;dashed=1;" edge="1" source="ec_staging_zone" target="cloud_bg" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1050" y="680" />
+          <mxPoint x="1190" y="680" />
+          <mxPoint x="1190" y="700" />
+          <mxPoint x="1230" y="700" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Health Agent → Entra Connect Health -->
+    <mxCell id="flow_health" value="Health agent telemetry&#xa;HTTPS / TLS 1.2+, TCP 443" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#007700;strokeWidth=1;fontSize=9;fontColor=#007700;dashed=1;" edge="1" source="ec_active_zone" target="entra_health" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1170" y="510" />
+          <mxPoint x="1340" y="510" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Writeback (optional reverse) -->
+    <mxCell id="flow_writeback" value="Optional writeback&#xa;(SSPR / group / device)&#xa;TCP 443 inbound to EC" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;strokeWidth=1;fontSize=9;fontColor=#666666;dashed=1;" edge="1" source="entra_wb" target="ec_active_zone" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1180" y="563" />
+          <mxPoint x="1180" y="540" />
+          <mxPoint x="900" y="540" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- ============================================================ -->
+    <!-- DIAGRAM TITLE AND VERSION NOTE                                 -->
+    <!-- ============================================================ -->
+    <mxCell id="diag_title" value="Microsoft Entra Connect Sync — Logical Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=18;" vertex="1" parent="1">
+      <mxGeometry x="300" y="40" width="780" height="36" as="geometry" />
+    </mxCell>
+    <mxCell id="diag_sub" value="Scope: PROD tenant (firstcitizens.onmicrosoft.com / fcpd.fcbint.net) | Target: v2.6.1.0 | Remote SQL topology | For platform team physical diagram handoff" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="300" y="78" width="780" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="diag_ver" value="Diagram version: 1.0 | Created: June 2026 | Status: Logical — for physical handoff" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;fontSize=9;" vertex="1" parent="1">
+      <mxGeometry x="1150" y="1120" width="460" height="20" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>
